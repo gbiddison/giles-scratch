@@ -15,7 +15,7 @@ class NeuralIO:
 
     @classmethod
     def create(cls, path):
-        # NeuralIO is the IO module for the UI representation of the net (x&y coords of the nodes) class is NeuralEditNeuralNet defined in wxneural/neuraledit_element.py
+        # NeuralIO is the IO module for the UI representation of the net (x&y coords of the nodes) class is NeuralEditNeuralNet defined in gui/neuraledit_element.py
         net = NeuralIO().read(path)
 
         # the UI repr is linked to the functional repr by a path attribute contained in the UI repr
