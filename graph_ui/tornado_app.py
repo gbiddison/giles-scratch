@@ -46,20 +46,7 @@ class WebSocketBridge(object):
         path = '/Users/gbiddison/source/pwn/python/neural2/nets/nerve_sim_layout_1.nui'
 
         net = NeuralIO.create(path)
-
-        # convert NET positions to json
-        mapping = {'nodes': {}, 'edges': []}
-        for e in net.Elements:
-            mapping['nodes'][e.Name] = {'x': e.Position[0], 'y': e.Position[1]}
-
-            # add edges
-            neuron = net.lookup_neuron(e)
-            if len(neuron.Outgoing) == 0:
-                continue
-            for link in neuron.Outgoing:
-                target = net.lookup_element(link.Target)
-                mapping['edges'].append([e.Name, target.Name])
-        return mapping
+        return net.to_json()
 
         # return {
         #     'nodes': {
