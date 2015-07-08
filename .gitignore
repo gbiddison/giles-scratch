@@ -2,7 +2,7 @@ __pycache__
 *.swp
 *.pyc
 .ipynb_checkpoints
-
+.DS_Store
 
 ## Directory-based project format
 .idea/
