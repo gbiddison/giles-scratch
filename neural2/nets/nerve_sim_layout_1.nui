@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root module="neuraledit_element" objectid="0" type="NeuralEditNeuralNet">
+	<NetPath type="unicode">nerve_sim_layout_1.net</NetPath>
+	<Elements type="list">
+		<item index="0" module="neuraledit_element" objectid="1" type="NeuralEditElement">
+			<Name type="str">LC</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.502217425853</item>
+				<item index="1" type="float">0.620927560509</item>
+			</Position>
+		</item>
+		<item index="1" module="neuraledit_element" objectid="2" type="NeuralEditElement">
+			<Name type="str">PL1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.306236980006</item>
+				<item index="1" type="float">0.0156333891716</item>
+			</Position>
+		</item>
+		<item index="2" module="neuraledit_element" objectid="3" type="NeuralEditElement">
+			<Name type="str">STL1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.837254901961</item>
+				<item index="1" type="float">0.0392156862745</item>
+			</Position>
+		</item>
+		<item index="3" module="neuraledit_element" objectid="4" type="NeuralEditElement">
+			<Name type="str">FOOTL1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.825</item>
+				<item index="1" type="float">0.655490947748</item>
+			</Position>
+		</item>
+		<item index="4" module="neuraledit_element" objectid="5" type="NeuralEditElement">
+			<Name type="str">SWL1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.838480392157</item>
+				<item index="1" type="float">0.248371829564</item>
+			</Position>
+		</item>
+		<item index="5" module="neuraledit_element" objectid="6" type="NeuralEditElement">
+			<Name type="str">FASL1</Name>
+			<Position type="tuple">
+				<item index="0" type="int">0</item>
+				<item index="1" type="float">0.0686274509804</item>
+			</Position>
+		</item>
+		<item index="6" module="neuraledit_element" objectid="7" type="NeuralEditElement">
+			<Name type="str">BASL1</Name>
+			<Position type="tuple">
+				<item index="0" type="int">0</item>
+				<item index="1" type="float">0.540145877628</item>
+			</Position>
+		</item>
+		<item index="7" module="neuraledit_element" objectid="8" type="NeuralEditElement">
+			<Name type="str">PR1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.301022270902</item>
+				<item index="1" type="float">0.113359856539</item>
+			</Position>
+		</item>
+		<item index="8" module="neuraledit_element" objectid="9" type="NeuralEditElement">
+			<Name type="str">STR1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.839705882353</item>
+				<item index="1" type="float">0.122951699847</item>
+			</Position>
+		</item>
+		<item index="9" module="neuraledit_element" objectid="10" type="NeuralEditElement">
+			<Name type="str">FOOTR1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.826225490196</item>
+				<item index="1" type="float">0.733092799003</item>
+			</Position>
+		</item>
+		<item index="10" module="neuraledit_element" objectid="11" type="NeuralEditElement">
+			<Name type="str">SWR1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.840931372549</item>
+				<item index="1" type="float">0.323183106759</item>
+			</Position>
+		</item>
+		<item index="11" module="neuraledit_element" objectid="12" type="NeuralEditElement">
+			<Name type="str">FASR1</Name>
+			<Position type="tuple">
+				<item index="0" type="int">0</item>
+				<item index="1" type="float">0.164602259305</item>
+			</Position>
+		</item>
+		<item index="12" module="neuraledit_element" objectid="13" type="NeuralEditElement">
+			<Name type="str">BASR1</Name>
+			<Position type="tuple">
+				<item index="0" type="int">0</item>
+				<item index="1" type="float">0.634934121513</item>
+			</Position>
+		</item>
+		<item index="13" module="neuraledit_element" objectid="14" type="NeuralEditElement">
+			<Name type="str">PL2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.389387764963</item>
+				<item index="1" type="float">0.0142401155421</item>
+			</Position>
+		</item>
+		<item index="14" module="neuraledit_element" objectid="15" type="NeuralEditElement">
+			<Name type="str">STL2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.891176470588</item>
+				<item index="1" type="float">0.0384492515513</item>
+			</Position>
+		</item>
+		<item index="15" module="neuraledit_element" objectid="16" type="NeuralEditElement">
+			<Name type="str">FOOTL2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.888725490196</item>
+				<item index="1" type="float">0.654496327557</item>
+			</Position>
+		</item>
+		<item index="16" module="neuraledit_element" objectid="17" type="NeuralEditElement">
+			<Name type="str">SWL2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.894852941177</item>
+				<item index="1" type="float">0.246033599638</item>
+			</Position>
+		</item>
+		<item index="17" module="neuraledit_element" objectid="18" type="NeuralEditElement">
+			<Name type="str">FASL2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.0698529411765</item>
+				<item index="1" type="float">0.0698529411765</item>
+			</Position>
+		</item>
+		<item index="18" module="neuraledit_element" objectid="19" type="NeuralEditElement">
+			<Name type="str">BASL2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.0588235294118</item>
+				<item index="1" type="float">0.541557943002</item>
+			</Position>
+		</item>
+		<item index="19" module="neuraledit_element" objectid="20" type="NeuralEditElement">
+			<Name type="str">PR2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.386181087988</item>
+				<item index="1" type="float">0.108068638189</item>
+			</Position>
+		</item>
+		<item index="20" module="neuraledit_element" objectid="21" type="NeuralEditElement">
+			<Name type="str">STR2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.89362745098</item>
+				<item index="1" type="float">0.123846992247</item>
+			</Position>
+		</item>
+		<item index="21" module="neuraledit_element" objectid="22" type="NeuralEditElement">
+			<Name type="str">FOOTR2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.8875</item>
+				<item index="1" type="float">0.734992107468</item>
+			</Position>
+		</item>
+		<item index="22" module="neuraledit_element" objectid="23" type="NeuralEditElement">
+			<Name type="str">SWR2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.896078431373</item>
+				<item index="1" type="float">0.322971028498</item>
+			</Position>
+		</item>
+		<item index="23" module="neuraledit_element" objectid="24" type="NeuralEditElement">
+			<Name type="str">FASR2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.0674019607843</item>
+				<item index="1" type="float">0.165128428151</item>
+			</Position>
+		</item>
+		<item index="24" module="neuraledit_element" objectid="25" type="NeuralEditElement">
+			<Name type="str">BASR2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.0625</item>
+				<item index="1" type="float">0.635017342095</item>
+			</Position>
+		</item>
+		<item index="25" module="neuraledit_element" objectid="26" type="NeuralEditElement">
+			<Name type="str">PL3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.467636589137</item>
+				<item index="1" type="float">0.0134803921569</item>
+			</Position>
+		</item>
+		<item index="26" module="neuraledit_element" objectid="27" type="NeuralEditElement">
+			<Name type="str">STL3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.95</item>
+				<item index="1" type="float">0.0384586474242</item>
+			</Position>
+		</item>
+		<item index="27" module="neuraledit_element" objectid="28" type="NeuralEditElement">
+			<Name type="str">FOOTL3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.95</item>
+				<item index="1" type="float">0.65472719756</item>
+			</Position>
+		</item>
+		<item index="28" module="neuraledit_element" objectid="29" type="NeuralEditElement">
+			<Name type="str">SWL3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.95</item>
+				<item index="1" type="float">0.253292582093</item>
+			</Position>
+		</item>
+		<item index="29" module="neuraledit_element" objectid="30" type="NeuralEditElement">
+			<Name type="str">FASL3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.136029411765</item>
+				<item index="1" type="float">0.0698529411765</item>
+			</Position>
+		</item>
+		<item index="30" module="neuraledit_element" objectid="31" type="NeuralEditElement">
+			<Name type="str">BASL3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.127450980392</item>
+				<item index="1" type="float">0.541980757253</item>
+			</Position>
+		</item>
+		<item index="31" module="neuraledit_element" objectid="32" type="NeuralEditElement">
+			<Name type="str">PR3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.467102366686</item>
+				<item index="1" type="float">0.110912902949</item>
+			</Position>
+		</item>
+		<item index="32" module="neuraledit_element" objectid="33" type="NeuralEditElement">
+			<Name type="str">STR3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.95</item>
+				<item index="1" type="float">0.123774509804</item>
+			</Position>
+		</item>
+		<item index="33" module="neuraledit_element" objectid="34" type="NeuralEditElement">
+			<Name type="str">FOOTR3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.95</item>
+				<item index="1" type="float">0.735695455619</item>
+			</Position>
+		</item>
+		<item index="34" module="neuraledit_element" objectid="35" type="NeuralEditElement">
+			<Name type="str">SWR3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.95</item>
+				<item index="1" type="float">0.324678392715</item>
+			</Position>
+		</item>
+		<item index="35" module="neuraledit_element" objectid="36" type="NeuralEditElement">
+			<Name type="str">FASR3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.136029411765</item>
+				<item index="1" type="float">0.164990174602</item>
+			</Position>
+		</item>
+		<item index="36" module="neuraledit_element" objectid="37" type="NeuralEditElement">
+			<Name type="str">BASR3</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.123774509804</item>
+				<item index="1" type="float">0.635661630479</item>
+			</Position>
+		</item>
+		<item index="37" module="neuraledit_element" objectid="38" type="NeuralEditElement">
+			<Name type="str">LEL1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.89488247106</item>
+				<item index="1" type="float">0.512664293538</item>
+			</Position>
+		</item>
+		<item index="38" module="neuraledit_element" objectid="39" type="NeuralEditElement">
+			<Name type="str">LER1</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.895587698386</item>
+				<item index="1" type="float">0.432854412301</item>
+			</Position>
+		</item>
+		<item index="39" module="neuraledit_element" objectid="40" type="NeuralEditElement">
+			<Name type="str">LT</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.310905386251</item>
+				<item index="1" type="float">0.20594141271</item>
+			</Position>
+		</item>
+		<item index="40" module="neuraledit_element" objectid="41" type="NeuralEditElement">
+			<Name type="str">RT</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.376279180895</item>
+				<item index="1" type="float">0.204252840239</item>
+			</Position>
+		</item>
+		<item index="41" module="neuraledit_element" objectid="42" type="NeuralEditElement">
+			<Name type="str">RBL</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.320122736937</item>
+				<item index="1" type="float">0.293914964671</item>
+			</Position>
+		</item>
+		<item index="42" module="neuraledit_element" objectid="43" type="NeuralEditElement">
+			<Name type="str">RBR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.393528660095</item>
+				<item index="1" type="float">0.291119021541</item>
+			</Position>
+		</item>
+		<item index="43" module="neuraledit_element" objectid="44" type="NeuralEditElement">
+			<Name type="str">LCS</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.0674019607843</item>
+				<item index="1" type="float">0.284159364732</item>
+			</Position>
+		</item>
+		<item index="44" module="neuraledit_element" objectid="45" type="NeuralEditElement">
+			<Name type="str">NWC</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.476496896677</item>
+				<item index="1" type="float">0.292761956918</item>
+			</Position>
+		</item>
+		<item index="45" module="neuraledit_element" objectid="46" type="NeuralEditElement">
+			<Name type="str">ATSL</Name>
+			<Position type="tuple">
+				<item index="0" type="int">0</item>
+				<item index="1" type="float">0.765736743767</item>
+			</Position>
+		</item>
+		<item index="46" module="neuraledit_element" objectid="47" type="NeuralEditElement">
+			<Name type="str">QL</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.56392414578</item>
+				<item index="1" type="float">0.374386583768</item>
+			</Position>
+		</item>
+		<item index="47" module="neuraledit_element" objectid="48" type="NeuralEditElement">
+			<Name type="str">LL</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.308677222258</item>
+				<item index="1" type="float">0.374041621029</item>
+			</Position>
+		</item>
+		<item index="48" module="neuraledit_element" objectid="49" type="NeuralEditElement">
+			<Name type="str">FL</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.483798831691</item>
+				<item index="1" type="float">0.375365096751</item>
+			</Position>
+		</item>
+		<item index="49" module="neuraledit_element" objectid="50" type="NeuralEditElement">
+			<Name type="str">HL</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.402792990142</item>
+				<item index="1" type="float">0.371889966282</item>
+			</Position>
+		</item>
+		<item index="50" module="neuraledit_element" objectid="51" type="NeuralEditElement">
+			<Name type="str">LEL2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.95</item>
+				<item index="1" type="float">0.512978384125</item>
+			</Position>
+		</item>
+		<item index="51" module="neuraledit_element" objectid="52" type="NeuralEditElement">
+			<Name type="str">ATSR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.122416135129</item>
+				<item index="1" type="float">0.767156862745</item>
+			</Position>
+		</item>
+		<item index="52" module="neuraledit_element" objectid="53" type="NeuralEditElement">
+			<Name type="str">QR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.567627461719</item>
+				<item index="1" type="float">0.465985600155</item>
+			</Position>
+		</item>
+		<item index="53" module="neuraledit_element" objectid="54" type="NeuralEditElement">
+			<Name type="str">LR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.314831518588</item>
+				<item index="1" type="float">0.468756040204</item>
+			</Position>
+		</item>
+		<item index="54" module="neuraledit_element" objectid="55" type="NeuralEditElement">
+			<Name type="str">FR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.488284689561</item>
+				<item index="1" type="float">0.46461648734</item>
+			</Position>
+		</item>
+		<item index="55" module="neuraledit_element" objectid="56" type="NeuralEditElement">
+			<Name type="str">HR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.401033277495</item>
+				<item index="1" type="float">0.464714472864</item>
+			</Position>
+		</item>
+		<item index="56" module="neuraledit_element" objectid="57" type="NeuralEditElement">
+			<Name type="str">LER2</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.95</item>
+				<item index="1" type="float">0.432979243176</item>
+			</Position>
+		</item>
+		<item index="57" module="neuraledit_element" objectid="58" type="NeuralEditElement">
+			<Name type="str">NFCL</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.664266692438</item>
+				<item index="1" type="float">0.372777205076</item>
+			</Position>
+		</item>
+		<item index="58" module="neuraledit_element" objectid="59" type="NeuralEditElement">
+			<Name type="str">NFCR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.663818375105</item>
+				<item index="1" type="float">0.463325226038</item>
+			</Position>
+		</item>
+		<item index="59" module="neuraledit_element" objectid="60" type="NeuralEditElement">
+			<Name type="str">CRR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.669467978868</item>
+				<item index="1" type="float">0.560236937053</item>
+			</Position>
+		</item>
+		<item index="60" module="neuraledit_element" objectid="61" type="NeuralEditElement">
+			<Name type="str">CRL</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.66544654554</item>
+				<item index="1" type="float">0.285706999119</item>
+			</Position>
+		</item>
+		<item index="61" module="neuraledit_element" objectid="62" type="NeuralEditElement">
+			<Name type="str">ACSL</Name>
+			<Position type="tuple">
+				<item index="0" type="int">0</item>
+				<item index="1" type="float">0.354373375856</item>
+			</Position>
+		</item>
+		<item index="62" module="neuraledit_element" objectid="63" type="NeuralEditElement">
+			<Name type="str">ACSR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.129901960784</item>
+				<item index="1" type="float">0.362031011748</item>
+			</Position>
+		</item>
+		<item index="63" module="neuraledit_element" objectid="64" type="NeuralEditElement">
+			<Name type="str">ES</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.0616624251012</item>
+				<item index="1" type="float">0.918929729613</item>
+			</Position>
+		</item>
+		<item index="64" module="neuraledit_element" objectid="65" type="NeuralEditElement">
+			<Name type="str">LOS</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.226005626785</item>
+				<item index="1" type="float">0.374762418659</item>
+			</Position>
+		</item>
+		<item index="65" module="neuraledit_element" objectid="66" type="NeuralEditElement">
+			<Name type="str">ROS</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.229765317956</item>
+				<item index="1" type="float">0.466329220626</item>
+			</Position>
+		</item>
+		<item index="66" module="neuraledit_element" objectid="67" type="NeuralEditElement">
+			<Name type="str">FA</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.345723804308</item>
+				<item index="1" type="float">0.719099660675</item>
+			</Position>
+		</item>
+		<item index="67" module="neuraledit_element" objectid="68" type="NeuralEditElement">
+			<Name type="str">SC</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.506833483667</item>
+				<item index="1" type="float">0.714960107811</item>
+			</Position>
+		</item>
+		<item index="68" module="neuraledit_element" objectid="69" type="NeuralEditElement">
+			<Name type="str">MTS</Name>
+			<Position type="tuple">
+				<item index="0" type="int">0</item>
+				<item index="1" type="float">0.854882095226</item>
+			</Position>
+		</item>
+		<item index="69" module="neuraledit_element" objectid="70" type="NeuralEditElement">
+			<Name type="str">MCS</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.124957047441</item>
+				<item index="1" type="float">0.853961299744</item>
+			</Position>
+		</item>
+		<item index="70" module="neuraledit_element" objectid="71" type="NeuralEditElement">
+			<Name type="str">MO</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.349127794601</item>
+				<item index="1" type="float">0.8141791766</item>
+			</Position>
+		</item>
+		<item index="71" module="neuraledit_element" objectid="72" type="NeuralEditElement">
+			<Name type="str">FP</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.345874138264</item>
+				<item index="1" type="float">0.623543639799</item>
+			</Position>
+		</item>
+		<item index="72" module="neuraledit_element" objectid="73" type="NeuralEditElement">
+			<Name type="str">CC</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.425761871013</item>
+				<item index="1" type="float">0.621855067328</item>
+			</Position>
+		</item>
+		<item index="73" module="neuraledit_element" objectid="74" type="NeuralEditElement">
+			<Name type="str">BP</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.426184685265</item>
+				<item index="1" type="float">0.712299733695</item>
+			</Position>
+		</item>
+		<item index="74" module="neuraledit_element" objectid="75" type="NeuralEditElement">
+			<Name type="str">FO</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.509497884586</item>
+				<item index="1" type="float">0.812223492902</item>
+			</Position>
+		</item>
+		<item index="75" module="neuraledit_element" objectid="76" type="NeuralEditElement">
+			<Name type="str">FOL</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.737551811524</item>
+				<item index="1" type="float">0.287575435432</item>
+			</Position>
+		</item>
+		<item index="76" module="neuraledit_element" objectid="77" type="NeuralEditElement">
+			<Name type="str">FOR</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.735966593648</item>
+				<item index="1" type="float">0.565077153535</item>
+			</Position>
+		</item>
+		<item index="77" module="neuraledit_element" objectid="78" type="NeuralEditElement">
+			<Name type="str">FOMC</Name>
+			<Position type="tuple">
+				<item index="0" type="float">0.829901960784</item>
+				<item index="1" type="float">0.473189549642</item>
+			</Position>
+		</item>
+	</Elements>
+</root>

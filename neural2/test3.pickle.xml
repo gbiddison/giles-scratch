@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root module="neural.neuralnet" objectid="0" type="NeuralNet">
+	<Neurons type="list">
+		<item index="0" module="neural.subnet" objectid="1" type="SubNet">
+			<Path type="str">
+				test2.pickle.xml
+			</Path>
+			<Name type="str">
+				test2
+			</Name>
+			<Incoming type="list">
+				<item index="0" module="neural.link" objectid="2" type="Link">
+					<Source module="neural.neuron" objectid="3" type="Neuron">
+						<Name type="str">
+							neuron
+						</Name>
+						<Incoming type="list"/>
+						<Outgoing type="list">
+							<item index="0" module="neural.link" objectid="2" type="Link"/>
+						</Outgoing>
+						<LowThreshold type="float">
+							1.0
+						</LowThreshold>
+						<HighThreshold type="float">
+							1.0
+						</HighThreshold>
+						<MinFrequency type="int">
+							0
+						</MinFrequency>
+						<_activation type="float">
+							0.0
+						</_activation>
+					</Source>
+					<Target module="neural.subnet" objectid="1" type="SubNet"/>
+					<Weight type="float">
+						1.0
+					</Weight>
+				</item>
+				<item index="1" module="neural.link" objectid="4" type="Link">
+					<Source module="neural.neuron" objectid="5" type="Neuron">
+						<Name type="str">
+							neuron-2
+						</Name>
+						<Incoming type="list"/>
+						<Outgoing type="list">
+							<item index="0" module="neural.link" objectid="4" type="Link"/>
+						</Outgoing>
+						<LowThreshold type="float">
+							1.0
+						</LowThreshold>
+						<HighThreshold type="float">
+							1.0
+						</HighThreshold>
+						<MinFrequency type="int">
+							0
+						</MinFrequency>
+						<_activation type="float">
+							0.0
+						</_activation>
+					</Source>
+					<Target module="neural.subnet" objectid="1" type="SubNet"/>
+					<Weight type="float">
+						1.0
+					</Weight>
+				</item>
+			</Incoming>
+			<Outgoing type="list">
+				<item index="0" module="neural.link" objectid="6" type="Link">
+					<Source module="neural.subnet" objectid="1" type="SubNet"/>
+					<Target module="neural.neuron" objectid="7" type="Neuron">
+						<Name type="str">
+							neuron-3
+						</Name>
+						<Incoming type="list">
+							<item index="0" module="neural.link" objectid="6" type="Link"/>
+						</Incoming>
+						<Outgoing type="list"/>
+						<LowThreshold type="float">
+							1.0
+						</LowThreshold>
+						<HighThreshold type="float">
+							1.0
+						</HighThreshold>
+						<MinFrequency type="int">
+							0
+						</MinFrequency>
+						<_activation type="float">
+							0.0
+						</_activation>
+					</Target>
+					<Weight type="float">
+						1.0
+					</Weight>
+				</item>
+				<item index="1" module="neural.link" objectid="8" type="Link">
+					<Source module="neural.subnet" objectid="1" type="SubNet"/>
+					<Target module="neural.neuron" objectid="9" type="Neuron">
+						<Name type="str">
+							neuron-4
+						</Name>
+						<Incoming type="list">
+							<item index="0" module="neural.link" objectid="8" type="Link"/>
+						</Incoming>
+						<Outgoing type="list"/>
+						<LowThreshold type="float">
+							1.0
+						</LowThreshold>
+						<HighThreshold type="float">
+							1.0
+						</HighThreshold>
+						<MinFrequency type="int">
+							0
+						</MinFrequency>
+						<_activation type="float">
+							0.0
+						</_activation>
+					</Target>
+					<Weight type="float">
+						1.0
+					</Weight>
+				</item>
+			</Outgoing>
+			<LowThreshold type="float">
+				1.0
+			</LowThreshold>
+			<HighThreshold type="float">
+				1.0
+			</HighThreshold>
+			<MinFrequency type="int">
+				0
+			</MinFrequency>
+			<_activation type="float">
+				0.0
+			</_activation>
+		</item>
+		<item index="1" module="neural.neuron" objectid="3" type="Neuron"/>
+		<item index="2" module="neural.neuron" objectid="5" type="Neuron"/>
+		<item index="3" module="neural.neuron" objectid="7" type="Neuron"/>
+		<item index="4" module="neural.neuron" objectid="9" type="Neuron"/>
+	</Neurons>
+</root>

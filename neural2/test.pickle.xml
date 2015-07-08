@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root module="neural.neuralnet" objectid="0" type="NeuralNet">
+	<Neurons type="list">
+		<item index="0" module="neural.neuron" objectid="1" type="Neuron">
+			<Name type="str">
+				input
+			</Name>
+			<Incoming type="list"/>
+			<Outgoing type="list">
+				<item index="0" module="neural.link" objectid="2" type="Link">
+					<Source module="neural.neuron" objectid="1" type="Neuron"/>
+					<Target module="neural.neuron" objectid="3" type="Neuron">
+						<Name type="str">
+							output
+						</Name>
+						<Incoming type="list">
+							<item index="0" module="neural.link" objectid="2" type="Link"/>
+						</Incoming>
+						<Outgoing type="list"/>
+						<LowThreshold type="float">
+							1.0
+						</LowThreshold>
+						<HighThreshold type="float">
+							1.0
+						</HighThreshold>
+						<MinFrequency type="int">
+							0
+						</MinFrequency>
+						<_activation type="float">
+							0.0
+						</_activation>
+					</Target>
+					<Weight type="float">
+						1.0
+					</Weight>
+				</item>
+			</Outgoing>
+			<LowThreshold type="float">
+				1.0
+			</LowThreshold>
+			<HighThreshold type="float">
+				1.0
+			</HighThreshold>
+			<MinFrequency type="int">
+				0
+			</MinFrequency>
+			<_activation type="float">
+				0.0
+			</_activation>
+		</item>
+		<item index="1" module="neural.neuron" objectid="3" type="Neuron"/>
+	</Neurons>
+</root>
