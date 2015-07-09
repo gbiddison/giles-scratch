@@ -2,7 +2,6 @@
 import json
 import logging
 import os
-import sys
 import time
 
 
@@ -36,17 +35,18 @@ class WebSocketBridge(object):
         # websocket callback for push messages
         self.ws_callback = None
 
-    def generate_initial_mapping(self):
-        '''
-        :return: json structure representing the graph nodes and edges
-
-        '''
-
         from neuralnetio import NeuralIO
         path = '/Users/gbiddison/source/pwn/python/neural2/nets/nerve_sim_layout_1.nui'
 
-        net = NeuralIO.create(path)
-        return net.to_json()
+        self.net = NeuralIO.create(path)
+
+    def sync_state(self):
+        '''
+        :return: json structure representing the graph nodes and edges for UI repr
+
+        '''
+
+        return self.net.to_json()
 
         # return {
         #     'nodes': {
@@ -167,7 +167,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         if (COMMAND_KEY in message_dict.keys()) and 'init' in message_dict[COMMAND_KEY]:
             return_msg = {
                 COMMAND_KEY: 'init response',
-                PAYLOAD_KEY: self.application.wsbridge.generate_initial_mapping()
+                PAYLOAD_KEY: self.application.wsbridge.sync_state()
             }
 
         # else:

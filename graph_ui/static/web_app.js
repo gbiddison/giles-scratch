@@ -3,17 +3,16 @@
  */
 
 
-var app = angular.module( 'userModule', [] );
+var app = angular.module( 'graph_ui_module', [] );
 
 app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
 
-    var Service = {};
+    var Service = {};           // we return this object
     var callbacks = {};
     var currentCallbackId = 0;
     var ws = undefined;
 
     function sendRequest(request) {
-
         var defer = $q.defer();
         var callbackId = getCallbackId();
         callbacks[callbackId] = {
@@ -22,41 +21,29 @@ app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
         };
         request.callback_id = callbackId;
         ws.send(JSON.stringify(request));
-
         return defer.promise;
     }
 
     function listener(messageObj) {
-
         // if this has a specific callback assigned, send to the promise
         if (callbacks.hasOwnProperty(messageObj.callback_id)){
-
             $rootScope.$apply(callbacks[messageObj.callback_id].cb.resolve(messageObj.result));
             delete callbacks[messageObj.callbackID];
         }
-        else {
+        else
             // else, send to rootscope's switchboard
             $rootScope.switchBoard(messageObj);
-        }
     }
 
-
     function getCallbackId() {
-        currentCallbackId += 1;
-        if (currentCallbackId > 10000) {
-            currentCallbackId = 0;
-        }
+        currentCallbackId  = (currentCallbackId + 1) % 10000;
         return currentCallbackId;
     }
 
     Service.initialize = function(){
-
         var loc = window.location, new_uri;
-        if (loc.protocol === "https:") {
-            new_uri = "wss:";
-        } else {
-            new_uri = "ws:";
-        }
+        new_uri = loc.protocol === "https:" ? new_uri = "wss:" : new_uri = "ws:";
+
         new_uri += "//" + loc.host;
         new_uri += loc.pathname + "ws";
         console.log(new_uri);
@@ -70,10 +57,8 @@ app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
         };
 
         ws.onclose = function(){
-
             $rootScope.connection_status = 'Disconnected, Click to Connect';
             $rootScope.$apply();
-
             console.log("Socket closed");
         };
 
@@ -82,50 +67,70 @@ app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
         };
     };
 
-
     Service.command = function(command, payload) {
-
         var d = {
             command : command,
             payload : payload
         };
-
         var promise = sendRequest(d);
         return promise;
-
     };
 
     return Service;
 }]);
 
+
+/*
+    app directive -- resize : seems to get called when the browser is resized
+    can attach 'resize' as a directive to any html element eg <div resize />
+    but since this touches fabric_canvas, it needs to be an element inside the ng-controller associated <div>
+*/
 app.directive('resize', function ($window) {
-    return function (scope, element) {
+    return function ($scope, element) {
         var w = angular.element($window);
-        var changeHeight = function() {
-            scope.fabric_canvas.setHeight(angular.element($window).height() - 300)
+        var changeSize = function() {
+            $scope.fabric_canvas.setWidth($("#canvaswrap").width()-4);
+            $scope.fabric_canvas.setHeight(angular.element($window).height() - 300)
+
+            $scope.rescale_nodes();
+            $scope.render_edges();
         };
         w.bind('resize', function () {
-            changeHeight();   // when window size gets changed
+            changeSize();   // when window size gets changed
         });
-        changeHeight(); // when page loads
+        changeSize(); // when page loads
     }
 })
 
+/*
+    the root controller
+*/
 app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocketService', '$window',
         function ($scope, $rootScope, $timeout, WebSocketService, $window) {
 
     console.log('Initialized root controller.');
     $rootScope.connection_status = 'Disconnected, Click to Connect';
 
+    /*
+        add a node item to the fabric canvas; a node has coordinates and a label
+        we are also interested in whether the node has incoming or outgoing edges,
+        so that we can represent terminal nodes with a different shape
+
+        node coords are represented from 0.0 to 1.0, in order to be view scale independent
+    */
     $scope.add_node = function(label, x_coord, y_coord) {
-        var width = 45;
-        var height = 25;
+        var width = $scope.fabric_canvas.getWidth();
+        var height = $scope.fabric_canvas.getHeight();
+        var size = 0.05 * Math.min(width, height);
+        var x = x_coord * width + size/2;
+        var y = y_coord * height + size/2;
 
         var rect = new fabric.Rect({
-            width: width, height: height,
+            width: size, height: size,
             originX: 'center',
             originY: 'center',
             fill: '#00f0c0',
+            //opacity: '0.25',
             angle: 0
         });
 
@@ -137,25 +142,52 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         });
 
         var group = new fabric.Group([rect, text], {
-            left: x_coord + 2,
-            top: y_coord + 5
+            left: x,
+            top: y
         });
         group.label = label;
         group.hasControls = true;
         group.lockUniScaling = group.lockScalingX = group.lockScalingY = true;
         group.lockRotation = true;
+        group.set({ width: size, height: size});
+        group.unscaled_x = x_coord;   // save unscaled coords for rescaling later
+        group.unscaled_y = y_coord;
+
         group.on('selected', function () {
             $scope.current_selection = [$scope.fabric_canvas.getActiveObject().label];
-            $scope.$apply();
+            //$scope.$apply();
+            $scope.render_edges();
         });
+
 
         $scope.fabric_canvas.add(group);
         $scope.all_nodes[label] = group;
     }
 
+    /*
+        rescale all the nodes to a new canvas size
+    */
+    $scope.rescale_nodes = function(){
+        var width = $scope.fabric_canvas.getWidth();
+        var height = $scope.fabric_canvas.getHeight();
+        var size = 0.05 * Math.min(width, height);
+        for(var name in $scope.all_nodes){
+            var group = $scope.all_nodes[name];
+            var rect = group.item(0);
+            var label = group.item(1);
+
+            rect.set({ width: size, height: size});
+            group.set({ width: size, height: size});
+            group.set({ left: group.unscaled_x * width + size/2, top: group.unscaled_y * height + size/2});
+            group.setCoords(); // reset location of hit box
+        }
+        $scope.fabric_canvas.renderAll();
+    }
+
     $scope.add_edge = function(edge) {
         $scope.all_edges.push(edge);
     }
+
     $scope.render_edges = function() {
         // get a buffer where we can draw directly to the canvas on the background layer
         buffer = $scope.buffer = document.createElement('canvas');
@@ -163,10 +195,13 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         buffer.height = $scope.fabric_canvas.getHeight();
 
         ctx = $scope.buffer.getContext('2d');
-        ctx.strokeStyle='rgba(0, 0, 255, 0.5)';
-        ctx.beginPath();
+        var unselected = 'rgba(0, 0, 255, 0.10)';
+        var outgoing = 'rgba(0, 255, 47, 0.90)';
+        var incoming = 'rgba(255, 105, 180, 0.90)';
+
         for( var i in $scope.all_edges){
             edge = $scope.all_edges[i];
+
             var start = $scope.all_nodes[edge[0]];
             var end = $scope.all_nodes[edge[1]];
             var start_w = start.getWidth();
@@ -177,22 +212,23 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             var x2 = end.getLeft();
             var y2 = end.getTop() + end_h / 2;
 
+            var cur = $scope.current_selection;
+            ctx.beginPath();
+            ctx.strokeStyle = (cur == edge[0]) ? outgoing : (cur == edge[1]) ? incoming : unselected;
+
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
+            ctx.stroke();
         }
-        ctx.stroke();
 
         var img = new fabric.Image( buffer, { left:0, top:0, angle:0});
         $scope.fabric_canvas.setBackgroundImage(img)
     }
 
-
     $scope.create_viz = function () {
 
         // create a wrapper around native canvas element (with id="c")
         $scope.fabric_canvas = new fabric.Canvas('c', {});
-        $scope.fabric_canvas.setWidth($("#canvaswrap").width()-4);
-        $scope.fabric_canvas.setHeight(angular.element($window).height() - 300);
 
         $scope.fabric_canvas.on('selection:created', function () {
             var select_array = [];
@@ -209,54 +245,32 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             $scope.current_selection = [];
             $scope.$apply();
         });
+
+        // redraw *all* the edges when any node moves; yes not optimal but seems quick enough
         $scope.fabric_canvas.on('object:moving', function(e) {
             $scope.render_edges();
         });
 
-        $scope.fabric_canvas.selection = true;
+        $scope.fabric_canvas.selection = false; // no group selection
 
         $scope.all_nodes = {};  // keyed by node name
         $scope.all_edges = [];  // each entry is a pair of edges ... maybe not a good key?  dunno
-
-        // raw canvas drawing alternatively
-        /*
-        var canvas = document.getElementById('c');
-        var ctx = canvas.getContext('2d');
-        canvas.width = $("#canvaswrap").width()-4;
-
-        ctx.beginPath();
-        ctx.moveTo(0,0);
-        ctx.lineTo(ctx.canvas.width, 0);
-        ctx.lineTo(ctx.canvas.width, ctx.canvas.height);
-        ctx.lineTo(0, ctx.canvas.height);
-        ctx.lineTo(0, 0);
-
-        ctx.moveTo(0,0);
-        ctx.lineTo(ctx.canvas.width, ctx.canvas.height);
-        ctx.stroke();
-        */
     };
 
     $scope.create_viz();
-
 
     $scope.reconnect = function(){
             WebSocketService.initialize();
     };
 
     $scope.init_nodes = function(payload){
-        width = $scope.fabric_canvas.getWidth();
-        height = $scope.fabric_canvas.getHeight();
         if('nodes' in payload){
-            for(var node in payload.nodes){
-                x = payload.nodes[node].x * width;
-                y = payload.nodes[node].y * height;
-                $scope.add_node(node, x, y)
-            }
+            for(var node in payload.nodes)
+                $scope.add_node(node, payload.nodes[node].x, payload.nodes[node].y)
         }
         if('edges' in payload){
             for(var edge in payload.edges)
-            $scope.add_edge(payload.edges[edge])
+                $scope.add_edge(payload.edges[edge])
             $scope.render_edges()
         }
     }
