@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="graph_ui_module">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Giles GUI</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="static/bower_components/jquery/dist/jquery.min.js"></script>
+
+    <!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> -->
+    <script src="static/bower_components/angularjs/angular.min.js"></script>
+    <script src="static/bower_components/fabric/dist/fabric.js"></script>
+    <script src="static/web_app.js"></script>
+</head>
+<style>
+        #c {
+            width: 100%;
+            border: 1px solid #000;;
+            overflow: hidden;
+        }
+
+</style>
+<body>
+
+ <div ng-controller="rootController" class="container" ng-cloak resize>
+
+      <div class="page-header">
+        <h1>Graph Activity Monitor</h1>
+        <p class="lead">nerve_sim_layout_1</p>
+      </div>
+
+      <div class="row"  ng-click="reconnect()">
+        <div class="col-md-12">
+            <b>Connection status</b>
+            <p>{{connection_status}},              {{random_value}}</p>
+        </div>
+      </div>
+
+     <div class="row" >
+         <div class="col-md-12" id="canvaswrap">
+            <canvas id="c"></canvas>
+         </div>
+         <div class="col-md-12">
+             {{current_selection}}
+         </div>
+     </div>
+ </div> <!-- /container -->
+
+</body>
+</html>
