@@ -71,18 +71,17 @@ class WebSocketBridge(object):
         # the code continues on the next line
         yield gen.Task(IOLoop.instance().add_timeout, time.time() + self.update_rate)
 
-        # the update code
+        # the update the network
+        self.net.Net.update()
+        payload = {}
+        for neuron in self.net.Net.Neurons:
+            payload[neuron.Name] = neuron._firingFrequency
 
         import random as rnd
-        r1, g1, b1 = rnd.randint(0, 255), rnd.randint(0, 255), rnd.randint(0, 255)
-        r2, g2, b2 = rnd.randint(0, 255), rnd.randint(0, 255), rnd.randint(0, 255)
+        payload['random_value'] = rnd.randint(0, 255)
 
         if self.ws_callback is not None:
-            self.ws_callback(UPDATE_KEY, {
-                'random_value': r1,
-                'LCS': [r1, g1, b1],
-                'ES': [r2, g2, b2]
-            })
+            self.ws_callback(UPDATE_KEY, payload)
 
         # call ourselves again so that the yield loop completes
         self.device_loop()

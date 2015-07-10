@@ -30,11 +30,11 @@
  <div ng-controller="rootController" class="container" ng-cloak resize>
 
       <div class="page-header">
-        <h1>...</h1>
-        <p class="lead">...</p>
+        <h1>Graph Activity Monitor</h1>
+        <p class="lead">nerve_sim_layout_1</p>
       </div>
 
-      <div class="row">
+      <div class="row"  ng-click="reconnect()">
         <div class="col-md-12">
             <b>Connection status</b>
             <p>{{connection_status}},              {{random_value}}</p>

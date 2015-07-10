@@ -118,21 +118,53 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
         node coords are represented from 0.0 to 1.0, in order to be view scale independent
     */
-    $scope.add_node = function(label, x_coord, y_coord) {
+    $scope.add_node = function(label, x_coord, y_coord, has_outgoing, has_incoming) {
         var width = $scope.fabric_canvas.getWidth();
         var height = $scope.fabric_canvas.getHeight();
         var size = 0.05 * Math.min(width, height);
-        var x = x_coord * width + size/2;
-        var y = y_coord * height + size/2;
+        var x = x_coord * width;
+        var y = y_coord * height;
 
-        var rect = new fabric.Rect({
-            width: size, height: size,
-            originX: 'center',
-            originY: 'center',
-            fill: '#00f0c0',
-            //opacity: '0.25',
-            angle: 0
-        });
+        var node = null, fill = 0;
+        if (!has_incoming){
+            node = new fabric.Circle({
+                radius: size/2.0,
+                originX: 'center', originY: 'center',
+                fill: '#ffffff',
+                stroke: '#00f0c0'
+            });
+            fill = new fabric.Circle({
+                radius: 0.1,
+                originX: 'center', originY: 'center',
+                fill: '#00f0c0'
+            });
+        }else if (has_outgoing){
+            node = new fabric.Rect({
+                width: size, height: size,
+                originX: 'center', originY: 'center',
+                fill: '#ffffff',
+                stroke: '#00f0c0'
+            });
+            fill = new fabric.Rect({
+                width: 0.1, height: 0.1,
+                originX: 'center', originY: 'center',
+                fill: '#00f0c0'
+            });
+        }else{
+            node = new fabric.Triangle({
+                width: size, height: size,
+                originX: 'center', originY: 'center',
+                fill: '#ffffff',
+                stroke: '#00f0c0',
+                angle: 90.0
+            });
+            fill = new fabric.Triangle({
+                width: 0.1, height: 0.1,
+                originX: 'center', originY: 'center',
+                fill: '#00f0c0',
+                angle: 90.0
+            });
+        }
 
         var text = new fabric.Text(label, {
             originX: 'center',
@@ -141,7 +173,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             fontSize: 10
         });
 
-        var group = new fabric.Group([rect, text], {
+        var group = new fabric.Group([node, fill, text], {
             left: x,
             top: y
         });
@@ -174,11 +206,14 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         for(var name in $scope.all_nodes){
             var group = $scope.all_nodes[name];
             var rect = group.item(0);
-            var label = group.item(1);
+            var fill = group.item(1);
+            var label = group.item(2);
+            var factor = size / rect.getWidth();
 
-            rect.set({ width: size, height: size});
+            rect.set({ width: size, height: size, radius: size/2.0});
+            fill.set({ width: fill.getWidth() * factor, height: fill.getHeight() * factor, radius: (fill.getWidth() * factor)/2.0});
             group.set({ width: size, height: size});
-            group.set({ left: group.unscaled_x * width + size/2, top: group.unscaled_y * height + size/2});
+            group.set({ left: group.unscaled_x * width, top: group.unscaled_y * height});
             group.setCoords(); // reset location of hit box
         }
         $scope.fabric_canvas.renderAll();
@@ -248,6 +283,20 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
         // redraw *all* the edges when any node moves; yes not optimal but seems quick enough
         $scope.fabric_canvas.on('object:moving', function(e) {
+            // limit object dragging to canvas bounds
+            var obj = e.target;
+            obj.setCoords();
+            // top-left  corner
+            if(obj.getBoundingRect().top < 0 || obj.getBoundingRect().left < 0){
+                obj.top = Math.max(obj.top, obj.top-obj.getBoundingRect().top);
+                obj.left = Math.max(obj.left, obj.left-obj.getBoundingRect().left);
+            }
+            // bot-right corner
+            if(obj.getBoundingRect().top+obj.getBoundingRect().height  > obj.canvas.height || obj.getBoundingRect().left+obj.getBoundingRect().width  > obj.canvas.width){
+                obj.top = Math.min(obj.top, obj.canvas.height-obj.getBoundingRect().height+obj.top-obj.getBoundingRect().top);
+                obj.left = Math.min(obj.left, obj.canvas.width-obj.getBoundingRect().width+obj.left-obj.getBoundingRect().left);
+            }
+
             $scope.render_edges();
         });
 
@@ -260,19 +309,26 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     $scope.create_viz();
 
     $scope.reconnect = function(){
-            WebSocketService.initialize();
+        WebSocketService.initialize();
     };
 
     $scope.init_nodes = function(payload){
-        if('nodes' in payload){
-            for(var node in payload.nodes)
-                $scope.add_node(node, payload.nodes[node].x, payload.nodes[node].y)
+        // clear out any existing state - server is pushing us a completely new state
+        $scope.all_nodes = {};
+        $scope.all_edges = [];
+        $scope.fabric_canvas.clear();
+
+        var source_nodes = {};
+        var sink_nodes = {};
+
+        for(var edge in payload.edges){
+            $scope.add_edge(payload.edges[edge])
+            source_nodes[payload.edges[edge][0]] = true;
+            sink_nodes[payload.edges[edge][1]] = true;
         }
-        if('edges' in payload){
-            for(var edge in payload.edges)
-                $scope.add_edge(payload.edges[edge])
-            $scope.render_edges()
-        }
+        for(var node in payload.nodes)
+            $scope.add_node(node, payload.nodes[node].x, payload.nodes[node].y, node in source_nodes, node in sink_nodes);
+        $scope.render_edges()
     }
 
     $rootScope.switchBoard = function(message) {
@@ -288,16 +344,18 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             case 'update':
 
                 for (var key in message.payload) {
-                    $scope[key] = value = message.payload[key];
-
-                    if( key in $scope.all_nodes){
-                        node = $scope.all_nodes[key].getObjects()[0];
-                        node.setFill("rgb(0, 240," + value[2] + ')');
-                    }
+                    try{
+                        $scope[key] = value = message.payload[key]; // for updating {{ }} variables, but we should do this more intelligently
+                        if( key in $scope.all_nodes){
+                            value = message.payload[key];
+                            node = $scope.all_nodes[key].item(0);
+                            fill = $scope.all_nodes[key].item(1);
+                            fill.set({width: node.getWidth() * value, height: node.getHeight() * value, radius: node.get('radius') * value});
+                        }
+                     }catch(err){ console.log("*** " + err + " ***");}
                 }
 
-                // console.log(message);
-
+                $scope.fabric_canvas.renderAll();
                 break;
 
             default:
