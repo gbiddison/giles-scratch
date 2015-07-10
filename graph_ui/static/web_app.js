@@ -342,20 +342,15 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 break;
 
             case 'update':
-
                 for (var key in message.payload) {
-                    try{
-                        $scope[key] = value = message.payload[key]; // for updating {{ }} variables, but we should do this more intelligently
-                        if( key in $scope.all_nodes){
-                            value = message.payload[key];
-                            node = $scope.all_nodes[key].item(0);
-                            fill = $scope.all_nodes[key].item(1);
-                            fill.set({width: node.getWidth() * value, height: node.getHeight() * value, radius: node.get('radius') * value});
-                        }
-                     }catch(err){ console.log("*** " + err + " ***");}
+                    $scope[key] = value = message.payload[key]; // for updating {{ }} variables, but we should do this more intelligently
+                    if( key in $scope.all_nodes){
+                        value = message.payload[key];
+                        node = $scope.all_nodes[key].item(0);
+                        fill = $scope.all_nodes[key].item(1);
+                        fill.set({width: node.getWidth() * value, height: node.getHeight() * value, radius: node.get('radius') * value});
+                    }
                 }
-
-                $scope.fabric_canvas.renderAll();
                 break;
 
             default:

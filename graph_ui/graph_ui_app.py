@@ -13,6 +13,7 @@ import tornado.web
 import tornado.websocket
 import tornado.autoreload
 from tornado.ioloop import IOLoop
+from tornado import httpclient
 
 from tornado import gen
 
@@ -89,8 +90,9 @@ class WebSocketBridge(object):
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
-            (r"/", MainHandler),
             (r"/ws", WSHandler),
+            (r"/simws", WSHandler),
+            (r"^/(.*)$", MainHandler),
         ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
@@ -119,8 +121,18 @@ class BaseHandler(tornado.web.RequestHandler):
     pass
 
 class MainHandler(BaseHandler):
-    def get(self):
-        with open(angular_app_path + "/static/index.html", 'r') as f:
+    def get(self, filename):
+        if filename == "" or os.path.isdir(os.path.join("/static", filename)):
+            filename = os.path.join("/static", filename, "index.html")
+            print ("a:" + filename)
+        elif os.path.splitext(filename) == ".html":
+            filename = "/static/%s" % filename
+            print ("b:" + filename)
+        else:
+            filename = "/static/%s.html" % filename
+            print ("c:" + filename)
+
+        with open(angular_app_path + filename, 'r') as f:
             self.write(f.read())
 
 class WSHandler(tornado.websocket.WebSocketHandler):
