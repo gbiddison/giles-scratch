@@ -1,4 +1,5 @@
 
+
 import json
 import logging
 import os
@@ -37,7 +38,7 @@ class WebSocketBridge(object):
         self.ws_callback = None
 
         from neuralnetio import NeuralIO
-        path = '/Users/gbiddison/source/pwn/python/neural2/nets/nerve_sim_layout_1.nui'
+        path = '../neural2/nets/nerve_sim_layout_1.nui'
 
         self.net = NeuralIO.create(path)
 

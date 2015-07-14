@@ -114,13 +114,17 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     };
 
     draw_poly = function(ctx, points){
+        var w = ctx.canvas.width/2.;
+        var h = ctx.canvas.height/2.;
+
         ctx.beginPath();
-        ctx.moveTo(points[0][0], points[0][1]);
+        ctx.moveTo(points[0][0] + w, points[0][1] + h);
         for( var i in points)
         {
-            console.log(points[i]);
-            ctx.lineTo(points[i][0], points[i][1]);
+            //console.log(points[i]);
+            ctx.lineTo(points[i][0] + w, points[i][1] + h);
         }
+        ctx.closePath();
         ctx.stroke();
     }
 
@@ -135,6 +139,13 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'hdbang':   Math.PI/2,
             'hdsl':     Math.sqrt(11.0*11 + 22*22),
         	'hdsang':   [Math.atan2(22.0,11.0), Math.atan2(22.0,-11.0)],
+
+            'btl': Math.sqrt(6.0*6 + 18*18),
+            'btang': [Math.atan2(18.0,6), Math.atan2(18.0,-6)],
+            'bmang': [0, Math.PI],
+            'bbang': [Math.atan2(-30.0,6), Math.atan2(-30.0,-6)],
+            'bml': 12,
+            'bbl': Math.sqrt(6.0*6 + 30*30),
         }
         var bug = {   // state
             'x': 0.0,
@@ -142,8 +153,9 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'angle': 0.0,
         }
 
-        var Scale = 10.0;
+        var Scale = 2.0;
         var AspR = 1.0;
+        var ScAspR = Scale * AspR;
 
     	var mouthX = bug.x + bug_const.hdtl * Math.cos(bug.angle + bug_const.hdtang);
 	    var mouthY = bug.y + bug_const.hdtl * Math.sin(bug.angle + bug_const.hdtang);
@@ -154,14 +166,31 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var temp3 = bug.angle + bug_const.hdbang;    // body angle offset
 
         // calculate bug pts
-        var head_points = [[0,0], [0,0], [0,0], [0,0]]
+        var head_points = [[0,0], [0,0], [0,0], [0,0]];
         head_points[0]= [ 0.5 * Scale * mouthX, 0.5 * Scale * mouthY * AspR];
-        head_points[1] = [ bugx + (0.5 * Scale * bug_const.hdsl * Math.cos(temp1)), bugy + (0.5 * Scale*AspR * bug_const.hdsl * Math.sin(temp1))]
-        head_points[2] = [ bugx + (0.5 * Scale * bug_const.hdbl * Math.cos(temp3)), bugy + (0.5 * Scale*AspR * bug_const.hdbl * Math.sin(temp3))]
-        head_points[3] = [ bugx + (0.5 * Scale * bug_const.hdsl * Math.cos(temp2)), bugy + (0.5 * Scale*AspR * bug_const.hdsl * Math.sin(temp2))]
+        head_points[1] = [ bugx + (0.5 * Scale * bug_const.hdsl * Math.cos(temp1)), bugy + (0.5 * ScAspR * bug_const.hdsl * Math.sin(temp1))];
+        head_points[2] = [ bugx + (0.5 * Scale * bug_const.hdbl * Math.cos(temp3)), bugy + (0.5 * ScAspR * bug_const.hdbl * Math.sin(temp3))];
+        head_points[3] = [ bugx + (0.5 * Scale * bug_const.hdsl * Math.cos(temp2)), bugy + (0.5 * ScAspR * bug_const.hdsl * Math.sin(temp2))];
 
+        var body_points = [[0,0], [0,0] [0,0], [0,0], [0,0]];
+        temp1 = bug.angle + bug_const.btang[0]; // calculate body pts
+        temp2 = bug.angle + bug_const.bmang[0];
+        temp3 = bug.angle + bug_const.bbang[0];
+        body_points[0] = [ bugx + (0.5 * Scale * bug_const.btl * Math.cos(temp1)), bugy + (0.5 * ScAspR * bug_const.btl * Math.sin(temp1))];
+        body_points[1] = [ bugx + (0.5 * Scale * bug_const.bml * Math.cos(temp2)), bugy + (0.5 * ScAspR * bug_const.bml * Math.sin(temp2))];
+        body_points[2] = [ bugx + (0.5 * Scale * bug_const.bbl * Math.cos(temp3)), bugy + (0.5 * ScAspR * bug_const.bbl * Math.sin(temp3))];
+        temp1 = bug.angle + bug_const.btang[1];
+        temp2 = bug.angle + bug_const.bmang[1];
+        temp3 = bug.angle + bug_const.bbang[1];
+        body_points[3] = [ bugx + (0.5 * Scale * bug_const.bbl * Math.cos(temp3)), bugy + (0.5 * ScAspR * bug_const.bbl * Math.sin(temp3))];
+        body_points[4] = [ bugx + (0.5 * Scale * bug_const.bml * Math.cos(temp2)), bugy + (0.5 * ScAspR * bug_const.bml * Math.sin(temp2))];
+        body_points[5] = [ bugx + (0.5 * Scale * bug_const.btl * Math.cos(temp1)), bugy + (0.5 * ScAspR * bug_const.btl * Math.sin(temp1))];
+
+
+        //draw head
         draw_poly(ctx, head_points);
 
+        draw_poly(ctx, body_points);
         //if (bug.mouth)
         //    dc.DrawLine( bugp.head[0],bugp.head[1],bugp.head[4],bugp.head[5]);
 
