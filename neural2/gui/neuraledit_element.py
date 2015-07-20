@@ -26,17 +26,27 @@ class NeuralEditNeuralNet(PickleToXML):
         ''' convert UI Net to json repr
         { 'nodes': { 'node_x' : {'x': float, 'y': float }, ... }, 'edges': [[node_source, node_target], ... ] }
         '''
-        json = {'nodes': {}, 'edges': []}
+        json = {'nodes': {}, 'edges': [], 'outputs': [], 'inputs': []}
         for e in self.Elements:
             json['nodes'][e.Name] = {'x': e.Position[0], 'y': e.Position[1]}
 
-            # add edges
+            # add edges, outputs, inputs
             neuron = self.lookup_neuron(e)
             if len(neuron.Outgoing) == 0:
-                continue
-            for link in neuron.Outgoing:
-                target = self.lookup_element(link.Target)
-                json['edges'].append([e.Name, target.Name])
+                if len(neuron.Incoming) != 0:
+                    json['outputs'].append(e.Name)
+            else:
+                if len(neuron.Incoming) == 0:
+                    json['inputs'].append(e.Name)
+
+                # record edges on the outgoing side
+                for link in neuron.Outgoing:
+                    target = self.lookup_element(link.Target)
+                    json['edges'].append([e.Name, target.Name])
+
+            # add outputs
+
+            # add inputs
         return json
 
     def element_from_point(self, point):

@@ -62,6 +62,12 @@ class WebSocketBridge(object):
         #         ['node2', 'node3'],
         #         ['node2', 'node4'],
         #         ['node3', 'node4']
+        #     ],
+        #     'outputs': [
+        #        'node1', 'node2'
+        #     ],
+        #     'inputs': [
+        #        'node1', 'node2'
         #     ]
         #
         # }

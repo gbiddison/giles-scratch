@@ -2,6 +2,9 @@
  * Created by stonerri on 7/2/15.
  */
 
+String.prototype.in_list=function(list){
+   return ( list.indexOf(this.toString()) != -1)
+}
 
 var app = angular.module( 'graph_ui_module', [] );
 
@@ -118,7 +121,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
         node coords are represented from 0.0 to 1.0, in order to be view scale independent
     */
-    $scope.add_node = function(label, x_coord, y_coord, has_outgoing, has_incoming) {
+    $scope.add_node = function(label, x_coord, y_coord, is_input, is_output) {
         var width = $scope.fabric_canvas.getWidth();
         var height = $scope.fabric_canvas.getHeight();
         var size = 0.05 * Math.min(width, height);
@@ -126,19 +129,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var y = y_coord * height;
 
         var node = null, fill = 0;
-        if (!has_incoming){
-            node = new fabric.Circle({
-                radius: size/2.0,
-                originX: 'center', originY: 'center',
-                fill: '#ffffff',
-                stroke: '#00f0c0'
-            });
-            fill = new fabric.Circle({
-                radius: 0.1,
-                originX: 'center', originY: 'center',
-                fill: '#00f0c0'
-            });
-        }else if (has_outgoing){
+        if (is_input){
             node = new fabric.Rect({
                 width: size, height: size,
                 originX: 'center', originY: 'center',
@@ -150,7 +141,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 originX: 'center', originY: 'center',
                 fill: '#00f0c0'
             });
-        }else{
+        }else if(is_output){
             node = new fabric.Triangle({
                 width: size, height: size,
                 originX: 'center', originY: 'center',
@@ -163,6 +154,18 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 originX: 'center', originY: 'center',
                 fill: '#00f0c0',
                 angle: 90.0
+            });
+        }else{
+            node = new fabric.Circle({
+                radius: size/2.0,
+                originX: 'center', originY: 'center',
+                fill: '#ffffff',
+                stroke: '#00f0c0'
+            });
+            fill = new fabric.Circle({
+                radius: 0.1,
+                originX: 'center', originY: 'center',
+                fill: '#00f0c0'
             });
         }
 
@@ -318,16 +321,16 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         $scope.all_edges = [];
         $scope.fabric_canvas.clear();
 
-        var source_nodes = {};
-        var sink_nodes = {};
+        for(var edge in payload.edges)
+            $scope.add_edge(payload.edges[edge]);
 
-        for(var edge in payload.edges){
-            $scope.add_edge(payload.edges[edge])
-            source_nodes[payload.edges[edge][0]] = true;
-            sink_nodes[payload.edges[edge][1]] = true;
+        for(var node in payload.nodes){
+            $scope.add_node(node,
+                payload.nodes[node].x,
+                payload.nodes[node].y,
+                node.in_list(payload.inputs),
+                node.in_list(payload.outputs));
         }
-        for(var node in payload.nodes)
-            $scope.add_node(node, payload.nodes[node].x, payload.nodes[node].y, node in source_nodes, node in sink_nodes);
         $scope.render_edges()
     }
 
@@ -343,13 +346,18 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
             case 'update':
                 for (var key in message.payload) {
-                    $scope[key] = value = message.payload[key]; // for updating {{ }} variables, but we should do this more intelligently
+                    value = message.payload[key];
+                    // if key is a neuron, value is neuron firing frequency
+                    // render firing frequency as % fill
                     if( key in $scope.all_nodes){
                         value = message.payload[key];
                         node = $scope.all_nodes[key].item(0);
                         fill = $scope.all_nodes[key].item(1);
                         fill.set({width: node.getWidth() * value, height: node.getHeight() * value, radius: node.get('radius') * value});
-                    }
+                    }else
+                        // otherwise interpret the value as a scope key
+                        // for updating {{ }} variables
+                        $scope[key] = value;
                 }
                 break;
 
