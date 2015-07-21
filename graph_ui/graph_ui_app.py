@@ -20,6 +20,7 @@ from tornado import gen
 
 UPDATE_KEY = 'update'
 COMMAND_KEY = 'command'
+SENSOR_KEY = 'sensor'
 PAYLOAD_KEY = 'payload'
 angular_app_path = os.path.join(os.path.dirname(__file__))
 
@@ -71,6 +72,12 @@ class WebSocketBridge(object):
         #     ]
         #
         # }
+
+    def update_sensors(self, payload):
+        for neuron in self.net.Net.Neurons:
+            if neuron.Name in payload.keys():
+                neuron._sensory_current = payload[neuron.Name]
+        # { 'node1': 0.0, 'node2': 0.0 }
 
     @gen.engine
     def device_loop(self):
@@ -187,7 +194,11 @@ class WSHandler(tornado.websocket.WebSocketHandler):
                 COMMAND_KEY: 'init response',
                 PAYLOAD_KEY: self.application.wsbridge.sync_state()
             }
-
+        elif (COMMAND_KEY in message_dict.keys()) and (PAYLOAD_KEY in message_dict.keys()) \
+                and ('sensor' in message_dict[COMMAND_KEY]):
+            self.application.wsbridge.update_sensors(message_dict[PAYLOAD_KEY])
+        else:
+            print(message_dict)
         # else:
             # This is for handling return messages on the server side
             #return_msg = self.application.wsbridge.switchboard(message_dict)

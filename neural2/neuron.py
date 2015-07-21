@@ -57,6 +57,8 @@ class Neuron(PickleToXML):
         self._isHighIC = False
         self._lastChangeTimeIC = 0
         self._maxChangeTimeIC = 0
+
+        self._sensory_current = 0
         
     class LinkCantBeNullError(Exception):
         pass
@@ -152,7 +154,9 @@ class Neuron(PickleToXML):
             current += self.LowIC 
             if self._isHighIC: current += (self.HighIC - self.LowIC)
             
-        # TODO SENSORY CURRENT
+        # APPLY SENSORY CURRENT FROM EXTERNAL SOURCE
+        current += self._sensory_current  #  getSensorCurrent(np->sensorType, np->name, np->paramsSensorCurrent);
+        # self._sensory_current = 0 # clear immediately or hold?
 
         self._current = current # store calculated current 
         

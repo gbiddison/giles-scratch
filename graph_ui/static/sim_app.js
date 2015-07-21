@@ -137,7 +137,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     }
 
     $scope.transform = function(points, translate_x, translate_y, radians, scale){
-        radians = -(radians + Math.PI/2.0); // to get counter-clockwise rotation, orientated 0.0 = right facing
+        //radians = -(radians + Math.PI/2.0); // to get counter-clockwise rotation, orientated 0.0 = right facing
         var result = points.slice(); // copy array
         for(var i in points){
             var x0 = points[i][0];
@@ -158,9 +158,18 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
         var bug = $scope.bug;
+        var bug_const = $scope.bug_const;
         var x = bug.x + ctx.canvas.width/2.;
         var y = bug.y + ctx.canvas.height/2.;
+        //console.log("rx: (" + x + ", " + y + ")");
         var scale = 0.5;
+
+        var leg_points = bug.leg_points;    // we draw from "leg" to "foot"
+        var foot_points = bug.foot_points;
+        for(var i=0; i<6; ++i){
+            foot_points[i] = [leg_points[i][0] + bug_const.legl[i] * Math.cos(bug.legang[i]),
+                              leg_points[i][1] + bug_const.legl[i] * Math.sin(bug.legang[i])];
+        }
 
         //draw head
         $scope.draw_poly(ctx, $scope.transform(bug.head_points, x, y, bug.angle, scale));
@@ -181,9 +190,16 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         $scope.draw_lines(ctx, $scope.transform(bug.leg_points, x, y, bug.angle, scale),
                                $scope.transform(bug.foot_points, x, y, bug.angle, scale));
         // draw foot down pad
-        //    if (bug.foot[i])
-        //        dc.DrawRectangle(bugp.footx[i]-1,bugp.footy[i]-1,max(2.0,Scale*3.0),std::max(2.0,Scale*3.0));
-        //
+        for(var n in bug.foot){
+            if (bug.foot[n]){
+                var i = bug.leg_index.indexOf(n);
+                var fpt = $scope.transform(bug.foot_points, x, y, bug.angle, scale);
+                var w = 2. * scale;
+                var pad = [[fpt[i][0]-w, fpt[i][1]-w], [fpt[i][0]+w, fpt[i][1]-w],
+                           [fpt[i][0]+w, fpt[i][1]+w], [fpt[i][0]-w, fpt[i][1]+w]];
+                $scope.draw_poly(ctx, pad);
+            }
+        }
     }
 
     $scope.initialize = function(payload){
@@ -215,6 +231,9 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'attang':   [Math.atan2(15.0,8.0), 0., Math.atan2(-24.0,8.0), Math.atan2(15.0,-8.0), Math.PI, 2*Math.PI + Math.atan2(-24.0,-8.0)],
             'legl':     [17, 15, 17, 17, 15, 17],
 
+	        'maxlegang': [Math.PI/5, Math.PI/12, Math.PI/12, Math.PI - Math.PI/5, Math.PI - Math.PI/12, Math.PI - Math.PI/12],
+            'minlegang': [0., -Math.PI/12, -Math.PI/8, Math.PI, Math.PI + Math.PI/12, Math.PI + Math.PI/8],
+
             // ANTENNA consts
         	'antl':     Math.sqrt(30.0*30 + 65*65),
         	'antang':   [Math.atan2(65.0,30), Math.atan2(65.0,-30)],
@@ -231,10 +250,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var bug = {   // state
             'x': 0.0,
             'y': 0.0,
-            'angle': 0.0, // zero is straight right, pi is straight left, counter-clockwise rotations
+            'angle': -Math.PI/2, // NOT zero is straight right, pi is straight left, counter-clockwise rotations
             'legang':   [0., 0., 0., Math.PI, Math.PI, Math.PI],
-            'last_mouth': false,
             'mouth': false,
+            'last_mouth': false,
+            'leg_index': ['L1', 'L2', 'L3', 'R1', 'R2', 'R3'],
             'leg': { 'L1': {'backward_force':0., 'forward_force':0., 'lateral_force':0.},
                      'L2': {'backward_force':0., 'forward_force':0., 'lateral_force':0.},
                      'L3': {'backward_force':0., 'forward_force':0., 'lateral_force':0.},
@@ -243,15 +263,17 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                      'R3': {'backward_force':0., 'forward_force':0., 'lateral_force':0.}
                    },
             'foot': {'L1':true, 'L2':true, 'L3':true, 'R1':true, 'R2':true, 'R3':true},
+            'last_foot': {'L1':true, 'L2':true, 'L3':true, 'R1':true, 'R2':true, 'R3':true},
+            'antenna': [false, false], // antenna touching something
 
             'head_points': [[0,0], [0,0], [0,0], [0,0]],
             'body_points': [[0,0], [0,0], [0,0], [0,0], [0,0]],
             'leg_points':  [[0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],
             'foot_points': [[0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],
             'anta_points': [[0,0], [0,0]],
-            'antb_points': [[0,0], [0,0]],
+            'antb_points': [[0,0], [0,0]], // tip
             'cera_points': [[0,0], [0,0]],
-            'cerb_points': [[0,0], [0,0]],
+            'cerb_points': [[0,0], [0,0]], // tip
 
         }
     	var mouthX = bug_const.hdtl * Math.cos(bug_const.hdtang);
@@ -298,6 +320,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         }
 
 	    $scope.bug = bug;
+	    $scope.bug_const = bug_const;
         $scope.render_state();
     }
 
@@ -309,45 +332,36 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                         "SWR1", "SWR2", "SWR3"];
         var lateral  = ["LEL1", "LEL2",          // force lateral 7
                         "LER1", "LER2"];
-
         var foot = ["FOOTL1", "FOOTL2", "FOOTL3", // state, true > 0
                     "FOOTR1", "FOOTR2", "FOOTR3"];
         var mouth = ["FOMC"]; // state --> output is MO though wtf, true > 0.5
 
-        if( node.in_list(mouth))
-        {
+        if( node.in_list(mouth)){
             bug.last_mouth = bug.mouth;
             bug.mouth = value > 0.5;
-        }
-        else if( node.in_list(foot))
-        {
+        }else if( node.in_list(foot)){
             var foot_index = node.slice(-2); // eg "L1"
             bug.foot[foot_index] = value > 0;
-        }
-        else
-        {
+        }else{
             var leg_index = node.slice(-2); // eg "L1"
-            if( node.in_list(backward))
-                bug.leg[leg_index].backward_force = 50. * value;
-            else if( node.in_list(forward))
-                bug.leg[leg_index].forward_force = 50. * value;
-            else if( node.in_list(lateral))
-                bug.leg[leg_index].lateral_force = 7. * value;
+            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 10. * value;
+            else if( node.in_list(forward)) bug.leg[leg_index].forward_force = 50. * value;
+            else if( node.in_list(lateral)) bug.leg[leg_index].lateral_force = 7. * value;
         }
     }
 
     $scope.calculate_state = function() {
+        var bug_const = $scope.bug_const;
         var bug = $scope.bug;
         var leg = bug.leg; // alias for brevity
-        var TIMECONSTANT = 1.0 / 200.0; // seconds per simulated time step
+        var TIMECONSTANT = 0.05; //1.0 / 200.0; // seconds per simulated time step
         var DT = TIMECONSTANT;
         var TWOPI = 2.0*Math.PI;
 
         // calculate bug's translational velocity
         var d = 0.;
         for(var i in bug.foot) // sum forces of legs that are down
-            if( bug.foot[i])
-                d += leg[i].backward_force - leg[i].forward_force;
+            d += bug.foot[i] * (leg[i].backward_force - leg[i].forward_force);
         d = d/2.; //(adjustable!) originally d/2.0
 
         // calculate bug's angular velocity
@@ -358,11 +372,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var bugy = bug.y + Math.cos(bug.angle) * d * DT;
 
         // calc sideways force
-        d = bug.foot['L2'] * leg['L2'].lateral_force - bug.foot['R2'] * leg['R2'].lateral_force;
-        d = 2. * d;  // (adjustable!) (20 to 2)
+        var s = bug.foot['L2'] * leg['L2'].lateral_force - bug.foot['R2'] * leg['R2'].lateral_force;
+        s = 2. * s;  // (adjustable!) (20 to 2)
 
-        bugx -= Math.cos(bug.angle) * d * DT;
-        bugy -= Math.sin(bug.angle) * d * DT;
+        bugx -= Math.cos(bug.angle) * s * DT;
+        bugy -= Math.sin(bug.angle) * s * DT;
         bug.angle += f * DT;
 
         if (bug.angle < 0)                 // trig!!!
@@ -370,22 +384,26 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         if (bug.angle >= TWOPI)
             bug.angle = bug.angle - TWOPI;
 
-        /*for(int i=0; i<2; ++i) // calculate bug.antenna & cercus tip positions
-        {
-            bug.antennaX[i] = bugx + bug_const.antl * Math.cos(bug.angle + bug_const.antang[i]);
-            bug.antennaY[i] = bugy + bug_const.antl * Math.sin(bug.angle + bug_const.antang[i]);
-            bug.cerciX[i] = bugx + bug_const.cercl * Math.cos(bug.angle + bug_const.cercang[i]);
-            bug.cerciY[i] = bugy + bug_const.cercl * Math.sin(bug.angle + bug_const.cercang[i]);
-        }*/
+        console.log("d: " + d + " f:" + f + " s:" + s);
+
         /*
+        for(var i=0; i<2; ++i) // calculate bug.antenna & cercus tip positions
+        {
+            bug.antb_points[i][0] = bugx + bug_const.antl * Math.cos(bug.angle + bug_const.antang[i]);
+            bug.antb_points[i][1] = bugy + bug_const.antl * Math.sin(bug.angle + bug_const.antang[i]);
+            bug.cerb_points[i][0] = bugx + bug_const.cercl * Math.cos(bug.angle + bug_const.cercang[i]);
+            bug.cerb_points[i][1] = bugy + bug_const.cercl * Math.sin(bug.angle + bug_const.cercang[i]);
+        }*/
+
         // determine bug.antenna contact, bug.antenna contact angle, & cercus contact
+        /*
         var xinc = 0;  // "touching" variables
         var yinc = 0;
-        bug.antenna[0] = bug.antenna[1] = 0;
+        bug.antenna[0] = bug.antenna[1] = false;
         for(int i=0; i<2; i++)
         {
             // check world edge contact
-            if (bug.antennaX[i] <= ScaledMinx)
+            if (bug.antenna_points[i][0] <= ScaledMinx)
             {
                 xinc += 1;
                 if (!edget[i])
@@ -445,8 +463,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 yinc += 1;
             else if (bug.cerciY[i] >= ScaledMaxy)
                 yinc -= 1;
-            */
-            /*
+
             // check box edge contact
             for (int j=0; j<environment->nblock; ++j)
             {
@@ -554,48 +571,49 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         }
         else
         {*/
+            var oldx = bug.x;
+            var oldy = bug.y;
             bug.x = bugx;
             bug.y = bugy;
-        //}
+            //console.log("b: (" + bug.x + ", " + bug.y + ")");
+/*      } */
 
-        for (int i=0; i<6; ++i) // calculate leg angles & foot positions
+        for(var i in bug.leg_index) // calculate leg angles & foot positions
         {
-            if (bug.lastFoot[i] && bug.foot[i])
+            var n = bug.leg_index[i];
+            if(bug.last_foot[n] && bug.foot[n])
             { // foot stays down, stretch leg
-                xa = bug.x + bug_const.attl[i] * cos(bug.angle + bug_const.attang[i]);
-                ya = bug.y + bug_const.attl[i] * sin(bug.angle + bug_const.attang[i]);
-                d = atan2(bug.footY[i] - ya,bug.footX[i] - xa);
+
+                var fpt = $scope.transform(bug.foot_points, oldx, oldy, bug.angle, 1.0);
+                var lgt = $scope.transform(bug.leg_points, bug.x, bug.y, bug.angle, 1.0);
+
+                var d = Math.atan2(fpt[i][1] - lgt[i][1], fpt[i][0] - lgt[i][0]);
                 if (d < 0.)
                     d = TWOPI + d;
                 bug.legang[i] = d - bug.angle;
+
                 if (i < 3)
                 {
-                    while (bug.legang[i] > PI)
-                        bug.legang[i] = bug.legang[i] - TWOPI;
-                    while (bug.legang[i] <= -PI)
-                        bug.legang[i] = TWOPI + bug.legang[i];
+                    while(bug.legang[i] > Math.PI)   bug.legang[i] -= TWOPI;
+                    while(bug.legang[i] <= -Math.PI) bug.legang[i] += TWOPI;
                 }
                 else
                 {
-                    while (bug.legang[i] < 0.)
-                        bug.legang[i] = TWOPI + bug.legang[i];
-                    while (bug.legang[i] >= TWOPI)
-                        bug.legang[i] = bug.legang[i] - TWOPI;
+                    while(bug.legang[i] < 0.)     bug.legang[i] += TWOPI;
+                    while(bug.legang[i] >= TWOPI) bug.legang[i] -= TWOPI;
                 }
+                console.log("'" + n + "'[" + i + "]: " + bug.legang[i] );
             }
             else
             { // move foot
-                if (bug.lastFoot[i] && ((i >= 3 && bug.legang[i] < bug_const.maxlegang[i])
+                if (bug.last_foot[n] && ((i >= 3 && bug.legang[i] < bug_const.maxlegang[i])
                 || (i < 3 && bug.legang[i] > bug_const.maxlegang[i])))
                     bug.legang[i] = bug_const.maxlegang[i];
                 if (i < 3)
-                    bug.legang[i] += bug_const.DT * (leg[i].fF + leg[i].bF) * PI/15;
+                    bug.legang[i] += DT * (leg[n].forward_force + leg[n].backward_force) * Math.PI/15;
                 else
-                    bug.legang[i] -= bug_const.DT * (leg[i].fF + leg[i].bF) * PI/15;
-                bug.footX[i]	= bug.x + bug_const.attl[i] * cos(bug.angle + bug_const.attang[i])
-                                + bug_const.legl[i] * cos(bug.angle + bug.legang[i]);
-                bug.footY[i]	= bug.y + bug_const.attl[i] * sin(bug.angle + bug_const.attang[i])
-                                + bug_const.legl[i] * sin(bug.angle + bug.legang[i]);
+                    bug.legang[i] -= DT * (leg[n].forward_force + leg[n].backward_force) * Math.PI/15;
+                console.log("*'" + n + "'[" + i + "]: " + bug.legang[i] );
             }
         }
         /*
@@ -652,6 +670,130 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             bug.mouth_contact = true;
             break;
         }*/
+
+        for(var i in leg)
+        {
+            bug.last_foot[i] = bug.foot[i]; // save foot states
+            leg[i].backward_force = leg[i].forward_force = leg[i].lateral_force = 0;
+        }
+    }
+
+    $scope.send_sensors = function()
+    {
+        var bug = $scope.bug;
+        var bug_const = $scope.bug_const;
+        var LegAngleForward	= ['FASL1', 'FASL2', 'FASL3',
+                               'FASR1', 'FASR2', 'FASR3'];
+        var LegAngleBackward = ['BASL1', 'BASL2', 'BASL3',
+                                'BASR1', 'BASR2', 'BASR3'];
+        var AntennaContact   = ['ATSL', 'ATSR'];
+        var OdorStrength     = ['ACSL', 'ACSR', 'MCS'];
+        var EnergyCapacity   = ['ES'];
+        var MouthContact     = ['MTS'];
+
+        /* Parameters -- originally these were part of the network, but these are really state parameters, not network parameters
+        // FAS, BAS: neuron[5].paramsSensorCurrent[0] 1e-008
+        // ATS neuron[45].paramsSensorCurrent[0] 5.09e-009
+        // ATS neuron[45].paramsSensorCurrent[1] 0.02
+        // ACS neuron[61].paramsSensorCurrent[0] 1e-010
+        // ACS neuron[61].paramsSensorCurrent[1] 2.5e-012
+        // ES neuron[63].paramsSensorCurrent[0] 5e-012
+        // MTS neuron[68].paramsSensorCurrent[0] 5e-009
+        // MCS neuron[69].paramsSensorCurrent[0] 5e-011
+        // MCS neuron[69].paramsSensorCurrent[1] 5e-011
+        */
+        // LCS is an 'input' neuron, but it self stimulating, a beat generator
+
+        var sensors = {}
+        for(var n in $scope.inputs)
+        {
+            var node = $scope.inputs[n];
+            var value = 0;
+            if( node.in_list(LegAngleForward)){
+                var leg_index = node.slice(-2); // eg "L1"
+                var i = bug.leg_index.indexOf(leg_index);
+                if(i < 3){ // left
+                    if (bug.legang[i] >= bug_const.maxlegang[i]) value = 1e-008;
+                    //console.log("'" + node + "'[" + i + "]: " + value);
+                }else{ // right
+                    if (bug.legang[i] <= bug_const.maxlegang[i]) value = 1e-008;
+                    //console.log("'" + node + "'[" + i + "]: " + value);
+                }
+            }else if(node.in_list(LegAngleBackward)){
+                var leg_index = node.slice(-2); // eg "L1"
+                var i = bug.leg_index.indexOf(leg_index);
+                if(i < 3){ // left
+                    if (bug.legang[i] <= bug_const.minlegang[i]) value = 1e-008;
+                    //console.log("'" + node + "'[" + i + "]: " + value);
+                }else{
+                    if (bug.legang[i] >= bug_const.minlegang[i]) value = 1e-008;
+                    //console.log("'" + node + "'[" + i + "]: " + value);
+                }
+            }
+            sensors[node] = value;
+        }
+/*
+                case Neuron::AntennaContact: // bug.antenna contact
+                    i = (int)strlen(name);
+                    if (name[i-1] == 'L')
+                        j = 0;
+                    else
+                        j = 1;
+                    if (!edget[j])
+                    {
+                        if (bug.antenna[j])
+                        {
+                            edget[j] = 100;
+                            edgecang[j] = bug.antcang[j];
+                            I = *pI * edgecang[j];
+                        }
+                        else
+                            I = 0;
+                    }
+                    else
+                    {
+                        edget[j]--;
+                        I = *pI * edgecang[j];
+                    }
+                break;
+
+                case Neuron::OdorStrength: // bug.odor strength
+                    i = (int)strlen(name);
+                    if (name[i-1] == 'L')
+                        j = 0;
+                    else
+                        if (name[i-1] == 'R')
+                            j = 1;
+                        else
+                            j = 2;
+                    if (j < 2)
+                        I = *pI * bug.odor[j] - *(pI+1);
+                    else
+                        I = *pI * bug.mouth_odor - *(pI+1);
+                    break;
+
+                    case Neuron::EnergyCapacity: // bug.energy capacity
+                        I = *pI * bug.energy;
+                    break;
+
+                    case Neuron::MouthContact: // mouth contact
+                        if (bug.mouth_contact)
+                            I = *pI;
+                        else
+                            I = 0;
+                    break;
+
+                    default:
+                        I = 0;
+                break;
+            }
+
+            return(I);
+        }
+*/
+        //console.log(sensors);
+
+        WebSocketService.command('sensors', sensors);
     }
 
     $rootScope.switchBoard = function(message) {
@@ -674,6 +816,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 //$scope.bug.angle += 0.1; // demo spin the bug!
                 $scope.calculate_state();
                 $scope.render_state();
+                $scope.send_sensors();
                 break;
 
             default:

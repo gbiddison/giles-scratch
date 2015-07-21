@@ -125,8 +125,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var width = $scope.fabric_canvas.getWidth();
         var height = $scope.fabric_canvas.getHeight();
         var size = 0.05 * Math.min(width, height);
-        var x = x_coord * width;
-        var y = y_coord * height;
+        var x = x_coord * width + size/2.;
+        var y = y_coord * height + size/2.;
 
         var node = null, fill = 0;
         if (is_input){
@@ -190,10 +190,9 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
         group.on('selected', function () {
             $scope.current_selection = [$scope.fabric_canvas.getActiveObject().label];
-            //$scope.$apply();
+            $scope.$apply();
             $scope.render_edges();
         });
-
 
         $scope.fabric_canvas.add(group);
         $scope.all_nodes[label] = group;
@@ -216,7 +215,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             rect.set({ width: size, height: size, radius: size/2.0});
             fill.set({ width: fill.getWidth() * factor, height: fill.getHeight() * factor, radius: (fill.getWidth() * factor)/2.0});
             group.set({ width: size, height: size});
-            group.set({ left: group.unscaled_x * width, top: group.unscaled_y * height});
+            group.set({ left: group.unscaled_x * width + size/2., top: group.unscaled_y * height + size/2.});
             group.setCoords(); // reset location of hit box
         }
         $scope.fabric_canvas.renderAll();
@@ -268,20 +267,10 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         // create a wrapper around native canvas element (with id="c")
         $scope.fabric_canvas = new fabric.Canvas('c', {});
 
-        $scope.fabric_canvas.on('selection:created', function () {
-            var select_array = [];
-            var selection = $scope.fabric_canvas.getActiveGroup().getObjects();
-            for (var i in selection) {
-                console.log(i, selection[i].label);
-                select_array.push({"label":selection[i].label});
-            }
-            $scope.current_selection = select_array;
-            $scope.$apply();
-        });
-
         $scope.fabric_canvas.on('selection:cleared', function () {
             $scope.current_selection = [];
             $scope.$apply();
+            $scope.render_edges();
         });
 
         // redraw *all* the edges when any node moves; yes not optimal but seems quick enough
