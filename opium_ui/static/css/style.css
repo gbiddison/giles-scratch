@@ -1,0 +1,17 @@
+[ng-cloak]
+{
+    display: none !important;
+}
+
+html, body {
+    font-family: 'HelveticaNeue-Light', sans-serif;
+    /*font-size:12px;*/
+    /*height:100%;*/
+    margin: 0px;
+    padding: 0px;
+}
+
+/* for some reason the md icon button has an offset if we don't do this */
+.md-button.md-fab.md-mini{
+    line-height: 0px;
+}
