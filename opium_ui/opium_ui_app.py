@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import time
-
+import uuid
 
 import tornado.auth
 import tornado.escape
@@ -18,11 +18,17 @@ from tornado import httpclient
 
 from tornado import gen
 
+import couchdb
+from DBOrders import WorkOrder
+
 UPDATE_KEY = 'update'
 COMMAND_KEY = 'command'
-SENSOR_KEY = 'sensor'
 PAYLOAD_KEY = 'payload'
+STATUS_KEY = 'status'
+CALLBACK_KEY = 'callback_id'
+
 angular_app_path = os.path.join(os.path.dirname(__file__))
+
 
 class WebSocketBridge(object):
     """
@@ -33,51 +39,58 @@ class WebSocketBridge(object):
     def __init__(self):
 
         # non-blocking periodic polling in tornado
-        self.update_rate = 0.1
+        self.update_rate = 0.25
 
         # websocket callback for push messages
         self.ws_callback = None
 
-        from neuralnetio import NeuralIO
-        path = '../neural2/nets/nerve_sim_layout_1.nui'
+        # handle to work-order API
+        self.work_order_db = WorkOrder()
 
-        self.net = NeuralIO.create(path)
+    def list_work_orders(self):
+        """
+        Query couch for the list of active plates
+        :return:
+        return a dictionary keyed by work order id, where the value is a list of plates under that work order
 
-    def sync_state(self):
-        '''
-        :return: json structure representing the graph nodes and edges for UI repr
+        eg:     { 'work_id': { 'name':"Human readable name", 'plates': { 'plate_id'a list of plates } } }
 
-        '''
+        eg:     { 'work_id': { 'name': "Human readable name", 'plates': [plate_couch_doc] },
+                  'ABCDEF123': { 'name': "optional", 'plates': [ couch1, couch2] },
+                  'ASDFAS123': { 'name': "optional", 'plates': [ couch3, couch4] },
+                  'FOOFOO881': { 'name': "optional", 'plates': [ couch5] }};*/
+        """
+        try:
+            db = couchdb.Server("http://couch.synthego:5984/")["plates"]
 
-        return self.net.to_json()
+            rows = db.iterview(name="plateTask/unfinished_workorders", batch=1000)
 
-        # return {
-        #     'nodes': {
-        #         'node1': {'x': 0.0, 'y': 0.0},
-        #         'node2': {'x': 155.0, 'y': 0.0},
-        #         'node3': {'x': 310.0, 'y': 0.0},
-        #         'node4': {'x': 465.0, 'y': 0.0}
-        #     },
-        #     'edges': [
-        #         ['node1', 'node2'],
-        #         ['node2', 'node3'],
-        #         ['node2', 'node4'],
-        #         ['node3', 'node4']
-        #     ],
-        #     'outputs': [
-        #        'node1', 'node2'
-        #     ],
-        #     'inputs': [
-        #        'node1', 'node2'
-        #     ]
-        #
-        # }
+            work = {}
+            for row in rows:
+                doc = db[row.id]
+                if 'workorderid' not in doc:
+                    continue
+                workid = doc['workorderid']
+                if workid not in work:
+                    work[workid] = {'name': workid, 'plates': {}}
 
-    def update_sensors(self, payload):
-        for neuron in self.net.Net.Neurons:
-            if neuron.Name in payload.keys():
-                neuron._sensory_current = payload[neuron.Name]
-        # { 'node1': 0.0, 'node2': 0.0 }
+                    # try to query SAD for human readable
+                    result = self.work_order_db.get_workorder(workid)
+                    if 'human_readable_name' in result:
+                        work[workid]['name'] = result['human_readable_name']
+
+                plates = work[workid]['plates']
+                plateid = row.id
+                plates[plateid] = doc
+
+            if not work:
+                return {"work_id": {'name': "Test data, couch is broke!", 'plates': {"plate instance": { "task_index_next": "0", "task_wip_index": "0", "tasks": ["a", "b", "c"]}}},
+                      "ABCDEF123": {'name': "Fun Work", 'plates': ["plate 1", "plate 2"]},
+                      "ASDFAS123": {'name': "Something Awful", 'plates': ["plate 3"]},
+                      "FOOFOO881": {'name': "Impending Doom", 'plates': ["plate 4"]}};
+            return work
+        except:
+            return None
 
     @gen.engine
     def device_loop(self):
@@ -86,30 +99,27 @@ class WebSocketBridge(object):
         # the code continues on the next line
         yield gen.Task(IOLoop.instance().add_timeout, time.time() + self.update_rate)
 
-        # the update the network
-        self.net.Net.update()
-        payload = {}
-        for neuron in self.net.Net.Neurons:
-            payload[neuron.Name] = neuron._firingFrequency
+        # query couch, update state
+        payload = ["nothing"]
 
-        import random as rnd
-        payload['random_value'] = rnd.randint(0, 255)
-
+        # transfer state to javascript
         if self.ws_callback is not None:
-            self.ws_callback(UPDATE_KEY, payload)
+            payload = self.list_work_orders()
+            if payload is not None:
+                self.ws_callback(UPDATE_KEY, payload)
 
         # call ourselves again so that the yield loop completes
         self.device_loop()
+
 
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/ws", WSHandler),
-            (r"/simws", WSHandler),
             (r"^/(.*)$", MainHandler),
         ]
         settings = dict(
-            cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
+            cookie_secret=uuid.uuid4().hex,  # we will eventually save this for session management?
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             debug=True,
@@ -120,7 +130,8 @@ class Application(tornado.web.Application):
 
         self.disable_tornado_logging()
 
-    def disable_tornado_logging(self):
+    @staticmethod
+    def disable_tornado_logging():
         access_log = logging.getLogger("tornado.access")
         app_log = logging.getLogger("tornado.application")
         gen_log = logging.getLogger("tornado.general")
@@ -131,33 +142,30 @@ class Application(tornado.web.Application):
 
 
 class BaseHandler(tornado.web.RequestHandler):
+    def data_received(self, chunk):
+        pass
     # previously had user auth functions here
-    pass
+
 
 class MainHandler(BaseHandler):
     def get(self, filename):
         if filename == "" or os.path.isdir(os.path.join("/static", filename)):
             filename = os.path.join("/static", filename, "index.html")
-            print ("a:" + filename)
         elif os.path.splitext(filename) == ".html":
             filename = "/static/%s" % filename
-            print ("b:" + filename)
         else:
             filename = "/static/%s.html" % filename
-            print ("c:" + filename)
 
         with open(angular_app_path + filename, 'r') as f:
             self.write(f.read())
 
+
 class WSHandler(tornado.websocket.WebSocketHandler):
+
     connections = set()
     ws_open = False
 
     def check_origin(self, origin):
-        return True
-
-    def allow_draft76(self):
-        # for iOS 5.0 Safari
         return True
 
     def open(self):
@@ -167,10 +175,10 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     def send_message(self, command, payload, callback_id=-1):
 
         msg = {
-            'status': 'success',
-            'payload': payload,
-            'command': command,
-            'callback_id': callback_id
+            STATUS_KEY: 'success',
+            PAYLOAD_KEY: payload,
+            COMMAND_KEY: command,
+            CALLBACK_KEY: callback_id
         }
 
         [con.write_message(msg) for con in self.connections]
@@ -192,7 +200,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         if (COMMAND_KEY in message_dict.keys()) and 'init' in message_dict[COMMAND_KEY]:
             return_msg = {
                 COMMAND_KEY: 'init response',
-                PAYLOAD_KEY: self.application.wsbridge.sync_state()
+                PAYLOAD_KEY: self.application.wsbridge.list_work_orders()
             }
         elif (COMMAND_KEY in message_dict.keys()) and (PAYLOAD_KEY in message_dict.keys()) \
                 and ('sensor' in message_dict[COMMAND_KEY]):

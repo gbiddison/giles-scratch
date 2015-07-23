@@ -1,55 +1,108 @@
 <!DOCTYPE html>
-<html lang="en" ng-app="graph_ui_module">
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>Graph Activity Monitor</title>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+<html lang="en" ng-app="opium_ui_app">
+<head>
+    <link rel="stylesheet" href="/static/bower_components/angular-material/angular-material.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 
-    <!-- Latest compiled and minified JavaScript -->
-    <script src="static/bower_components/jquery/dist/jquery.min.js"></script>
+    <title>Opium</title>
+    <meta name="viewport" content="initial-scale=1">
 
-    <!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> -->
-    <script src="static/bower_components/angularjs/angular.min.js"></script>
-    <script src="static/bower_components/fabric/dist/fabric.js"></script>
-    <script src="static/web_app.js"></script>
-</head>
-<style>
-        #c {
-            width: 100%;
-            border: 1px solid #000;;
-            overflow: hidden;
+    <style>
+        .sample-show-hide {  }
+        .sample-show-hide {
+            -webkit-transition: all linear 0.5s;
+            transition: all linear 0.5s;
+        }
+        .sample-show-hide.ng-hide {  opacity: 0;  }
+        #file-input {  display: none;  }
+
+        .selected_work {
+            font-style: italic;
         }
 
-</style>
-<body>
-
- <div ng-controller="rootController" class="container" ng-cloak resize>
-
-      <div class="page-header">
-        <h1>Graph Activity Monitor</h1>
-        <p class="lead">nerve_sim_layout_1</p>
-      </div>
-
-      <div class="row"  ng-click="reconnect()">
-        <div class="col-md-12">
-            <b>Connection status</b>
-            <p>{{connection_status}},              {{random_value}}</p>
+    </style>
+</head>
+<body layout="column" ng-controller="rootController as rc" ng-cloak resize>
+<md-content flex layout="column">
+    <md-content style="height:50px;">
+        <div>
+            put something here
         </div>
-      </div>
+    </md-content>
 
-     <div class="row" >
-         <div class="col-md-12" id="canvaswrap">
-            <canvas id="c"></canvas>
-         </div>
-         <div class="col-md-12">
-             {{current_selection}}
-         </div>
-     </div>
- </div> <!-- /container -->
+    <md-content flex layout="row">
+        <md-card flex="30" >
+            <md-card-content>
+                <div layout="row" layout-align="center center">
+                    <h3 class="md-headline">Opium Work</h3>
+                    <span flex /><!-- span-flex here eats up remaining space in the row while leaving the button square-->
+                    <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="reconnect()">
+                        <ng-md-icon icon="refresh" style="fill:#ffffff"></ng-md-icon>
+                    </md-button>
 
+                </div>
+
+                <md-list layout-padding>
+                    <md-list-item ng-repeat="(work, details) in work_orders"
+                                  layout-align="center center"
+                                  ng-click="get_work_details(work)"
+                                    style="text-overflow: ellipsis">
+                            <div class="md-list-item-text-2">
+                                <h3 ng-class="work == selected_work ? 'selected_work' : ''">{{details.name}}</h3>
+                            </div>
+                    </md-list-item>
+                </md-list>
+            </md-card-content>
+        </md-card>
+
+        <md-content flex layout="column">
+            <!-- TODO -- maybe use UI state to show plate related stuff? -->
+            <!-- <div ng-if="ui_state=='workorder'" layout-padding> -->
+            <div layout-padding>
+
+                <div ng-show="selected_work">
+                    <div layout="row" layout-align="space-between center">
+                        <h3 class="md-display-1"><i>{{work_orders[selected_work].name}}</i></h3>
+                    </div>
+
+                    <div layout-padding>
+                        <p>Work order notes here</p>
+                    </div>
+
+                    <div ng-repeat="instance in work_orders[selected_work].plates">
+                        <md-progress-linear class="" md-mode="determinate"  ng-value="{{(instance.task_index_next/instance.tasks.length) * 100}}"></md-progress-linear>
+                        <div layout="row" layout-align="space-between center" layout-padding>
+                            <h3 class="md-title"><i>{{ instance._id }}</i></h3>
+                            <p>{{(instance.task_index_next/instance.tasks.length) * 100 | number:0}}% complete ({{instance.task_index_next}} / {{instance.tasks.length}})</p>
+                            <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="show_diagram(instance)">
+                                <ng-md-icon icon="merge_type" style="fill:#ffffff"></ng-md-icon>
+                            </md-button>
+                        </div>
+                        <!-- Display current task list, highlighting executing and current tasks -->
+                        <div layout="row" layout-align="space-between center" layout-padding>
+                            <div ng-repeat="task in instance.tasks">
+                                <div ng-class="smaller_font" ng-if="instance.task_index_next == $index && instance.task_index_wip != -1" style="color:deepskyblue"><b>{{task.name}}</b></div>
+                                <div ng-class="smaller_font" ng-if="instance.task_index_next == $index && instance.task_index_wip == -1"><b>{{task.name}}</b></div>
+
+                                <div ng-class="smaller_font" ng-if="instance.task_index_next != $index"><i>{{task.name}}</i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- selected work -->
+            </div>
+        </md-content>
+    </md-content>
+</md-content>
+
+<script src="/static/bower_components/angular/angular.min.js"></script>
+<script src="/static/bower_components/angular-animate/angular-animate.min.js"></script>
+<script src="/static/bower_components/angular-aria/angular-aria.min.js"></script>
+<script src="/static/bower_components/angular-material/angular-material.min.js"></script>
+<script src="/static/bower_components/angular-material-icons/angular-material-icons.min.js"></script>
+<script src="/static/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/static/bower_components/fabric/dist/fabric.min.js"></script>
+
+<script src="/static/web_app.js"></script>
 </body>
 </html>

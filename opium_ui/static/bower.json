@@ -1,9 +1,9 @@
 {
-  "name": "giles_ui",
+  "name": "opium_ui",
   "version": "0.0.0",
-  "homepage": "https://github.com/Synthego/rms_tools",
+  "homepage": "https://github.com/Synthego/giles_scratch",
   "authors": [
-    "Rich Stoner <stonerri@gmail.com>"
+    "Giles Biddison <gbiddison@synthego.com>"
   ],
   "license": "MIT",
   "ignore": [
@@ -14,8 +14,8 @@
     "tests"
   ],
   "dependencies": {
-    "angular-fabric": "~1.0.0",
-    "angularjs": "~1.4.1",
-    "jquery": "~2.1.4"
+    "fabric": "~1.4.13",
+    "angular-material": "~0.10.0",
+    "angular-material-icons": "~0.5.0"
   }
 }
