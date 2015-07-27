@@ -1,5 +1,5 @@
 /**
- * Created by stonerri on 7/2/15.
+ * Created by gbiddison on 7/10/15.
  */
 
 String.prototype.in_list=function(list){

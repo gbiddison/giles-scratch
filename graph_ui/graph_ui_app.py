@@ -1,5 +1,3 @@
-
-
 import json
 import logging
 import os
@@ -17,6 +15,9 @@ from tornado.ioloop import IOLoop
 from tornado import httpclient
 
 from tornado import gen
+from datetime import datetime
+
+UPDATE_RATE =  1./10 # seconds
 
 UPDATE_KEY = 'update'
 COMMAND_KEY = 'command'
@@ -33,15 +34,23 @@ class WebSocketBridge(object):
     def __init__(self):
 
         # non-blocking periodic polling in tornado
-        self.update_rate = 0.1
+        self.update_rate = UPDATE_RATE
+        self.last_frame = datetime.now()
 
         # websocket callback for push messages
         self.ws_callback = None
 
-        from neuralnetio import NeuralIO
-        path = '../neural2/nets/nerve_sim_layout_1.nui'
+        #from neuralnetio import NeuralIO
+        #path = '../neural2/nets/nerve_sim_layout_1.nui'
+        #self.net = NeuralIO.create(path)
 
-        self.net = NeuralIO.create(path)
+        from gui.nervesimreader import NerveSimReader
+        path = '../neural2/nets/newer neurons.neu'
+        self.net = NerveSimReader(path).Net
+
+        from neuralnetio import NeuralNetIO
+        stream = NeuralNetIO()
+        stream.write(../neural2/nets/nerve_sim_layout_1.net, self.net.Net)
 
     def sync_state(self):
         '''
@@ -94,6 +103,16 @@ class WebSocketBridge(object):
 
         import random as rnd
         payload['random_value'] = rnd.randint(0, 255)
+
+        frame = datetime.now()
+        payload['time_delta'] = delta = (frame - self.last_frame).total_seconds()
+        self.last_frame = frame
+
+        # p loop
+        desired_rate = UPDATE_RATE
+        kp = 1.0
+        error = desired_rate - delta
+        self.update_rate += kp * error
 
         if self.ws_callback is not None:
             self.ws_callback(UPDATE_KEY, payload)

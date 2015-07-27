@@ -37,7 +37,8 @@
       <div class="row"  ng-click="reconnect()">
         <div class="col-md-12">
             <b>Connection status</b>
-            <p>{{connection_status}},              {{random_value}}</p>
+            <p ng-if="connection_status=='Connected'">{{connection_status}}, frame rate: {{1.0/time_delta | number}}/s</p>
+            <p ng-if="connection_status!='Connected'">{{connection_status}}</p>
         </div>
       </div>
 

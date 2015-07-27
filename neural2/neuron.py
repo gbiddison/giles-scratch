@@ -116,20 +116,25 @@ class Neuron(PickleToXML):
     def set_IsHighIC(self, state):
         self._lastChangeTimeIC = 0
         self._isHighIC = state
-        if self.IntrinsicCurrent == Neuron.ICType_VInf:
-            self._maxChangeTimeIC = self.HIC[0]
-        else: # random type
-            self._maxChangeTimeIC = (random.randint(0, (int)(1000.0 * (self.HIC[1] - self.HIC[0]))) + 1000.0 * self.HIC[0]) / 1000.0
+        if state:
+            if self.IntrinsicCurrent == Neuron.ICType_VInf:
+                self._maxChangeTimeIC = self.HIC[0]
+            else: # random type
+                self._maxChangeTimeIC = (random.randint(0, (int)(1000.0 * (self.HIC[1] - self.HIC[0]))) + 1000.0 * self.HIC[0]) / 1000.0
+        else:
+            if self.IntrinsicCurrent == Neuron.ICType_Random:
+                self._maxChangeTimeIC = (random.randint(0, (int)(1000.0 * (self.LIC[1] - self.LIC[0]))) + 1000.0 * self.LIC[0]) / 1000.0
+
     
 
     def updateState(self):
         self._stateChanged = False
-
         # calculate current (based on activation of incoming links)
         current = 0.0
         for link in self.Incoming:
             activity = link.Source._firingFrequency * link.Weight # frequency * weight = current ... apparently
             if link.GateSource is not None:
+                print(self.Name + " gated by " + link.GateSource.Name)
                 gated_activity = link.GateSource._firingFrequency * link.GateWeight
                 if link.GateType == Link.GateType_Gate:
                     activity *= link.GateState + gated_activity * 1e9
