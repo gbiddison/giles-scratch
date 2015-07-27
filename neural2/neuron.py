@@ -134,7 +134,7 @@ class Neuron(PickleToXML):
         for link in self.Incoming:
             activity = link.Source._firingFrequency * link.Weight # frequency * weight = current ... apparently
             if link.GateSource is not None:
-                print(self.Name + " gated by " + link.GateSource.Name)
+                #print(self.Name + " gated by " + link.GateSource.Name)
                 gated_activity = link.GateSource._firingFrequency * link.GateWeight
                 if link.GateType == Link.GateType_Gate:
                     activity *= link.GateState + gated_activity * 1e9

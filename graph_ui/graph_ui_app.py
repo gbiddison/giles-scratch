@@ -40,17 +40,17 @@ class WebSocketBridge(object):
         # websocket callback for push messages
         self.ws_callback = None
 
-        #from neuralnetio import NeuralIO
-        #path = '../neural2/nets/nerve_sim_layout_1.nui'
-        #self.net = NeuralIO.create(path)
+        from neuralnetio import NeuralIO
+        path = '../neural2/nets/nerve_sim_layout_1.nui'
+        self.net = NeuralIO.create(path)
 
-        from gui.nervesimreader import NerveSimReader
-        path = '../neural2/nets/newer neurons.neu'
-        self.net = NerveSimReader(path).Net
+        #from gui.nervesimreader import NerveSimReader
+        #path = '../neural2/nets/newer neurons.neu'
+        #self.net = NerveSimReader(path).Net
 
-        from neuralnetio import NeuralNetIO
-        stream = NeuralNetIO()
-        stream.write(../neural2/nets/nerve_sim_layout_1.net, self.net.Net)
+        #from neuralnetio import NeuralNetIO
+        #stream = NeuralNetIO()
+        #stream.write("../neural2/nets/nerve_sim_layout_1.net", self.net.Net)
 
     def sync_state(self):
         '''
@@ -110,7 +110,7 @@ class WebSocketBridge(object):
 
         # p loop
         desired_rate = UPDATE_RATE
-        kp = 1.0
+        kp = 0.001
         error = desired_rate - delta
         self.update_rate += kp * error
 
