@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 
 import json
 import logging
@@ -14,12 +14,14 @@ import tornado.web
 import tornado.websocket
 import tornado.autoreload
 from tornado.ioloop import IOLoop
-from tornado import httpclient
+#from tornado import httpclient
 
 from tornado import gen
 
 import couchdb
 from DBOrders import WorkOrder
+from datetime import datetime
+
 
 UPDATE_KEY = 'update'
 COMMAND_KEY = 'command'
@@ -35,6 +37,8 @@ class WebSocketBridge(object):
     Class to manage module connections and logging (no more globals)
 
     """
+    CACHE_LIMIT = 10
+    CACHE_CULL = 0.75
 
     def __init__(self):
 
@@ -46,6 +50,24 @@ class WebSocketBridge(object):
 
         # handle to work-order API
         self.work_order_db = WorkOrder()
+
+        # cache names of work-orders that we've looked up so we don't hit SAD 10 times a sec
+        self.name_cache = {}
+
+    def add_name_to_cache(self, workid, name):
+        """
+        limit the cache to a max size by expiring 50% oldest items once a certain size is reached
+        :param workid:
+        :param name:
+        :return:
+        """
+        if len(self.name_cache) >= self.CACHE_LIMIT:
+            # sort keys by timestamp
+            sorted_keys = sorted(self.name_cache.keys(), key=lambda x: self.name_cache[x]['time_stamp'])
+            for i in range(int(self.CACHE_LIMIT * self.CACHE_CULL)):
+                del self.name_cache[sorted_keys[i]]
+
+        self.name_cache[workid] = {'name': name, 'time_stamp': datetime.now()}
 
     def list_work_orders(self):
         """
@@ -74,20 +96,58 @@ class WebSocketBridge(object):
                 if workid not in work:
                     work[workid] = {'name': workid, 'plates': {}}
 
-                    # try to query SAD for human readable
-                    result = self.work_order_db.get_workorder(workid)
-                    if 'human_readable_name' in result:
-                        work[workid]['name'] = result['human_readable_name']
+                    # check if name is in cache
+                    if workid in self.name_cache.keys():
+                        work[workid]['name'] = self.name_cache[workid]['name']
+                        self.name_cache[workid]['time_stamp'] = datetime.now()
+
+                    else:
+                        # try to query SAD for human readable
+                        result = self.work_order_db.get_full_workorder(workid)
+                        if 'human_readable_name' in result:
+                            name = result['human_readable_name']
+                            work[workid]['name'] = name
+                            self.add_name_to_cache(workid, name)  # manage cache size
 
                 plates = work[workid]['plates']
                 plateid = row.id
                 plates[plateid] = doc
 
             if not work:
-                return {"work_id": {'name': "Test data, couch is broke!", 'plates': {"plate instance": { "task_index_next": "0", "task_wip_index": "0", "tasks": ["a", "b", "c"]}}},
-                      "ABCDEF123": {'name': "Fun Work", 'plates': ["plate 1", "plate 2"]},
-                      "ASDFAS123": {'name': "Something Awful", 'plates': ["plate 3"]},
-                      "FOOFOO881": {'name': "Impending Doom", 'plates': ["plate 4"]}};
+
+                return {"work_id_0":
+                            {'name': "Test data, couch is empty or missing", 'plates':
+                                {"why is this key necessary":
+                                     {'_id': "test plate 0", 'task_index_next': "1", 'task_wip_index': "1", 'tasks':
+                                         [{'name': "task 1"}, {'name': "task 2"}, {'name': "task 3"}]
+                                      }
+                                 }
+                             },
+                        "work_id_1":
+                            {'name': "Fun Work", 'plates':
+                                {"huh why isn't this a list":
+                                     {'id_': "plate 1"},
+                                 "wtf why is there a key here":
+                                     {'id_': "plate 2"}
+                                 }
+                             },
+                        "work_id_2":
+                            {'name': "Something awful", 'plates':
+                                {"huh why isn't this a list":
+                                     {'id_': "plate 1"},
+                                 "wtf why is there a key here":
+                                     {'id_': "plate 2"}
+                                 }
+                             },
+                        "work_id_3":
+                            {'name': "Impending Doom", 'plates':
+                                {"huh why isn't this a list":
+                                     {'id_': "plate 1"},
+                                 "wtf why is there a key here":
+                                     {'id_': "plate 2"}
+                                 }
+                             },
+                        }
             return work
         except:
             return None

@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="/static/bower_components/angular-material/angular-material.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
 
-    <title>Opium</title>
+    <title>Opium-UI</title>
     <meta name="viewport" content="initial-scale=1">
 
     <style>
@@ -21,13 +21,18 @@
             font-style: italic;
         }
 
+        .task-card {
+            padding: 25px;
+            text-align: center;
+        }
+
     </style>
 </head>
 <body layout="column" ng-controller="rootController as rc" ng-cloak resize>
 <md-content flex layout="column">
     <md-content style="height:50px;">
         <div>
-            put something here
+<!--            put something here -->
         </div>
     </md-content>
 
@@ -35,12 +40,11 @@
         <md-card flex="30" >
             <md-card-content>
                 <div layout="row" layout-align="center center">
-                    <h3 class="md-headline">Opium Work</h3>
+                    <h3 class="md-headline">Opium Work in progress</h3>
                     <span flex /><!-- span-flex here eats up remaining space in the row while leaving the button square-->
                     <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="reconnect()">
                         <ng-md-icon icon="refresh" style="fill:#ffffff"></ng-md-icon>
                     </md-button>
-
                 </div>
 
                 <md-list layout-padding>
@@ -67,7 +71,7 @@
                     </div>
 
                     <div layout-padding>
-                        <p>Work order notes here</p>
+                        <p>{{selected_work}}</p>
                     </div>
 
                     <div ng-repeat="instance in work_orders[selected_work].plates">
@@ -75,17 +79,17 @@
                         <div layout="row" layout-align="space-between center" layout-padding>
                             <h3 class="md-title"><i>{{ instance._id }}</i></h3>
                             <p>{{(instance.task_index_next/instance.tasks.length) * 100 | number:0}}% complete ({{instance.task_index_next}} / {{instance.tasks.length}})</p>
-                            <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="show_diagram(instance)">
-                                <ng-md-icon icon="merge_type" style="fill:#ffffff"></ng-md-icon>
+                            <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="reconnect()">
+                                <ng-md-icon icon="refresh" style="fill:#ffffff"></ng-md-icon>
                             </md-button>
                         </div>
                         <!-- Display current task list, highlighting executing and current tasks -->
                         <div layout="row" layout-align="space-between center" layout-padding>
                             <div ng-repeat="task in instance.tasks">
-                                <div ng-class="smaller_font" ng-if="instance.task_index_next == $index && instance.task_index_wip != -1" style="color:deepskyblue"><b>{{task.name}}</b></div>
-                                <div ng-class="smaller_font" ng-if="instance.task_index_next == $index && instance.task_index_wip == -1"><b>{{task.name}}</b></div>
+                                <div ng-if="instance.task_index_next == $index && instance.task_index_wip != -1" style="color:deepskyblue"><md-card class="task-card"><b>{{task.name}}</b></md-card></div>
+                                <div ng-if="instance.task_index_next == $index && instance.task_index_wip == -1"><md-card class="task-card"><b>{{task.name}}</b></md-card></div>
 
-                                <div ng-class="smaller_font" ng-if="instance.task_index_next != $index"><i>{{task.name}}</i></div>
+                                <div ng-if="instance.task_index_next != $index"><i>{{task.name}}</i></div>
                             </div>
                         </div>
                     </div>
