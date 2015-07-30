@@ -1,6 +1,7 @@
 /**
- * Created by stonerri on 7/2/15.
+ * Created by gbiddison on 7/10/15.
  */
+SCALE = 0.5;
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
@@ -162,7 +163,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var x = bug.x + ctx.canvas.width/2.;
         var y = bug.y + ctx.canvas.height/2.;
         //console.log("rx: (" + x + ", " + y + ")");
-        var scale = 0.5;
+        var scale = SCALE;
 
         var leg_points = bug.leg_points;    // we draw from "leg" to "foot"
         var foot_points = bug.foot_points;
@@ -180,11 +181,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         $scope.draw_poly(ctx, $scope.transform(bug.body_points, x, y, bug.angle, scale));
 
         // draw antennae
-        $scope.draw_lines(ctx, $scope.transform(bug.anta_points, x, y, bug.angle, scale),
-                               $scope.transform(bug.antb_points, x, y, bug.angle, scale));
+        $scope.draw_lines(ctx, $scope.transform(bug.antb_points, x, y, bug.angle, scale),
+                               $scope.transform(bug.ant_points, x, y, bug.angle, scale));
         // draw cerci
-        $scope.draw_lines(ctx, $scope.transform(bug.cera_points, x, y, bug.angle, scale),
-                               $scope.transform(bug.cerb_points, x, y, bug.angle, scale));
+        $scope.draw_lines(ctx, $scope.transform(bug.cerb_points, x, y, bug.angle, scale),
+                               $scope.transform(bug.cer_points, x, y, bug.angle, scale));
 
         // draw legs & feet
         $scope.draw_lines(ctx, $scope.transform(bug.leg_points, x, y, bug.angle, scale),
@@ -235,16 +236,16 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'minlegang': [0., -Math.PI/12, -Math.PI/8, Math.PI, Math.PI + Math.PI/12, Math.PI + Math.PI/8],
 
             // ANTENNA consts
-        	'antl':     Math.sqrt(30.0*30 + 65*65),
-        	'antang':   [Math.atan2(65.0,30), Math.atan2(65.0,-30)],
-            'antbl':    Math.sqrt(6.0*6 + 26*26),
-            'antbang':  [Math.atan2(26.0,6), Math.atan2(26.0,-6)],
+            'antbl':    Math.sqrt(6.0*6 + 26*26),                      // distance from origin
+            'antbang':  [Math.atan2(26.0,6), Math.atan2(26.0,-6)],     // angle from origin
+        	'antl':     Math.sqrt(30.0*30 + 65*65),                    // length
+        	'antang':   [Math.atan2(65.0,30), Math.atan2(65.0,-30)],   // angle
 
             // CERCI consts
-            'cercl':    Math.sqrt(34.0*34 + 8*8),
-            'cercang':  [Math.atan2(-34.0,8), Math.atan2(-34.0,-8)],
             'cerbl':    Math.sqrt(2.0*2 + 30*30),
             'cerbang':  [Math.atan2(-30.0,2), Math.atan2(-30.0,-2)],
+            'cercl':    Math.sqrt(34.0*34 + 8*8),
+            'cercang':  [Math.atan2(-34.0,8), Math.atan2(-34.0,-8)],
         }
 
         var bug = {   // state
@@ -264,16 +265,18 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                    },
             'foot': {'L1':true, 'L2':true, 'L3':true, 'R1':true, 'R2':true, 'R3':true},
             'last_foot': {'L1':true, 'L2':true, 'L3':true, 'R1':true, 'R2':true, 'R3':true},
-            'antenna': [false, false], // antenna touching something
-
+            'antenna_contact': [false, false],   // antenna touching something
+            'antenna_contact_angle': [0.0, 0.0], // angle antenna makes with contact, only valid if contact = true
+            'last_edge_contact_angle': [0.0, 0.0],
+            'antenna_edge_time': [0, 0],     // counter since last edge contact
             'head_points': [[0,0], [0,0], [0,0], [0,0]],
             'body_points': [[0,0], [0,0], [0,0], [0,0], [0,0]],
-            'leg_points':  [[0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],
-            'foot_points': [[0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],
-            'anta_points': [[0,0], [0,0]],
-            'antb_points': [[0,0], [0,0]], // tip
-            'cera_points': [[0,0], [0,0]],
-            'cerb_points': [[0,0], [0,0]], // tip
+            'leg_points':  [[0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],  // leg attachment to body
+            'foot_points': [[0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],  // free end of leg
+            'antb_points': [[0,0], [0,0]], // antenna attachment to body
+            'ant_points': [[0,0], [0,0]],  // free tip of antenna
+            'cerb_points': [[0,0], [0,0]], // cerci attachment to body
+            'cer_points': [[0,0], [0,0]],  // free tip of cerci
 
         }
     	var mouthX = bug_const.hdtl * Math.cos(bug_const.hdtang);
@@ -304,18 +307,18 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                               leg_points[i][1] + bug_const.legl[i] * Math.sin(bug.legang[i])];
         }
 
-        var anta_points = bug.anta_points;  // we draw from 'a' to 'b'
-        var antb_points = bug.antb_points;
-        var cera_points = bug.cera_points;
+        var antb_points = bug.antb_points;  // we draw from antb to ant
+        var ant_points = bug.ant_points;
         var cerb_points = bug.cerb_points;
+        var cer_points = bug.cer_points;
         for(var i=0; i<2; ++i){
-            anta_points[i] = [bug_const.antbl * Math.cos(bug_const.antbang[i]),
+            antb_points[i] = [bug_const.antbl * Math.cos(bug_const.antbang[i]),
                               bug_const.antbl * Math.sin(bug_const.antbang[i])];
-            antb_points[i] = [bug_const.antl * Math.cos(bug_const.antang[i]),
+            ant_points[i] = [bug_const.antl * Math.cos(bug_const.antang[i]),
                               bug_const.antl * Math.sin(bug_const.antang[i])];
-            cera_points[i] = [bug_const.cerbl * Math.cos(bug_const.cerbang[i]),
+            cerb_points[i] = [bug_const.cerbl * Math.cos(bug_const.cerbang[i]),
                               bug_const.cerbl * Math.sin(bug_const.cerbang[i])];
-            cerb_points[i] = [bug_const.cercl * Math.cos(bug_const.cercang[i]),
+            cer_points[i] = [bug_const.cercl * Math.cos(bug_const.cercang[i]),
                               bug_const.cercl * Math.sin(bug_const.cercang[i])];
         }
 
@@ -344,19 +347,30 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             bug.foot[foot_index] = value > 0;
         }else{
             var leg_index = node.slice(-2); // eg "L1"
-            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 10. * value;
-            else if( node.in_list(forward)) bug.leg[leg_index].forward_force = 50. * value;
+            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 10. * value;  // 50 original
+            else if( node.in_list(forward)) bug.leg[leg_index].forward_force = 50. * value;   // 50 original
             else if( node.in_list(lateral)) bug.leg[leg_index].lateral_force = 7. * value;
         }
     }
 
     $scope.calculate_state = function() {
+        var ctx = document.getElementById("c").getContext("2d");
+        var scale = SCALE;
+        var maxx = ctx.canvas.width / 2., maxy = ctx.canvas.height / 2.;
+        var minx = -maxx, miny = -maxy;
         var bug_const = $scope.bug_const;
         var bug = $scope.bug;
         var leg = bug.leg; // alias for brevity
-        var TIMECONSTANT = 0.05; //1.0 / 200.0; // seconds per simulated time step
+        // seems to work best with this fixed,
+        // gui framerate is a bit hicuppy
+        var TIMECONSTANT = 1 / 25.0; // seconds per simulated time step -- neuron time constant is 1/1000, would make sense if they were the same
         var DT = TIMECONSTANT;
-        var TWOPI = 2.0*Math.PI;
+        var PI = Math.PI;
+        var TWOPI = 2.0*PI;
+        var PIANDAHALF = 1.5*PI;
+        var HALFPI = 0.5*PI;
+        var oldx = bug.x;
+        var oldy = bug.y;
 
         // calculate bug's translational velocity
         var d = 0.;
@@ -371,7 +385,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var bugx = bug.x - Math.sin(bug.angle) * d * DT;
         var bugy = bug.y + Math.cos(bug.angle) * d * DT;
 
-        // calc sideways force
+        // calc sideways force du
         var s = bug.foot['L2'] * leg['L2'].lateral_force - bug.foot['R2'] * leg['R2'].lateral_force;
         s = 2. * s;  // (adjustable!) (20 to 2)
 
@@ -384,205 +398,158 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         if (bug.angle >= TWOPI)
             bug.angle = bug.angle - TWOPI;
 
-        console.log("d: " + d + " f:" + f + " s:" + s);
+        //console.log("d: " + d + " f:" + f + " s:" + s);
 
-        /*
-        for(var i=0; i<2; ++i) // calculate bug.antenna & cercus tip positions
-        {
-            bug.antb_points[i][0] = bugx + bug_const.antl * Math.cos(bug.angle + bug_const.antang[i]);
-            bug.antb_points[i][1] = bugy + bug_const.antl * Math.sin(bug.angle + bug_const.antang[i]);
-            bug.cerb_points[i][0] = bugx + bug_const.cercl * Math.cos(bug.angle + bug_const.cercang[i]);
-            bug.cerb_points[i][1] = bugy + bug_const.cercl * Math.sin(bug.angle + bug_const.cercang[i]);
-        }*/
+        // determine antenna contact, antenna contact angle & cercis contact based on new coords
+        //
+        var xinc = 0, yinc = 0;  // "touching" variables
+        var ant_pts = $scope.transform(bug.ant_points, bugx, bugy, bug.angle, 1.0);
+        var cer_pts = $scope.transform(bug.cer_points, bugx, bugy, bug.angle, 1.0);
 
-        // determine bug.antenna contact, bug.antenna contact angle, & cercus contact
-        /*
-        var xinc = 0;  // "touching" variables
-        var yinc = 0;
-        bug.antenna[0] = bug.antenna[1] = false;
-        for(int i=0; i<2; i++)
-        {
+        var edge_time = bug.antenna_edge_time;
+        var antenna_contact = bug.antenna_contact;
+        var contact_angle = bug.antenna_contact_angle;
+        for(var i=0; i<2; i++){
             // check world edge contact
-            if (bug.antenna_points[i][0] <= ScaledMinx)
-            {
-                xinc += 1;
-                if (!edget[i])
-                {
-                    bug.antenna[i] = true;
-                    if (bug.angle > HALFPI && bug.angle <= PIANDAHALF) // more trig!!!
-                        bug.antcang[i] = PI - bug.angle;
-                    else if (bug.angle < PIANDAHALF)
-                        bug.antcang[i] = bug.angle;
-                    else
-                        bug.antcang[i] = TWOPI - bug.angle;
-                }
-            }
-            else if (bug.antennaX[i] >= ScaledMaxx)
-            {
-                xinc -= 1;
-                if (!edget[i])
-                {
-                    bug.antenna[i] = true;
-                    if (bug.angle <= PIANDAHALF && bug.angle >= HALFPI)
-                        bug.antcang[i] = bug.angle - PI;
-                    else if (bug.angle > PIANDAHALF)
-                        bug.antcang[i] = TWOPI - bug.angle;
-                    else
-                        bug.antcang[i] = - bug.angle;
-                }
-            }
-            if (bug.antennaY[i] <= ScaledMiny)
-            {
-                yinc += 1;
-                if (!edget[i])
-                {
-                    bug.antenna[i] = true;
-                    if (bug.angle <= PI)
-                        bug.antcang[i] = bug.angle - HALFPI;
-                    else
-                        bug.antcang[i] = PIANDAHALF - bug.angle;
-                }
-            }
-            else if (bug.antennaY[i] >= ScaledMaxy)
-            {
-                yinc -= 1;
-                if (!edget[i])
-                {
-                    bug.antenna[i] = true;
-                    if (bug.angle <= PI )
-                        bug.antcang[i] = HALFPI - bug.angle;
-                    else
-                        bug.antcang[i] = bug.angle - PIANDAHALF;
-                }
-            }
-            if (bug.cerciX[i] <= ScaledMinx)
-                xinc += 1;
-            else if (bug.cerciX[i] >= ScaledMaxx)
-                xinc -= 1;
-            if (bug.cerciY[i] <= ScaledMiny)
-                yinc += 1;
-            else if (bug.cerciY[i] >= ScaledMaxy)
-                yinc -= 1;
+            if(ant_pts[i][0] <= minx){
+                console.log("x-" + i + " " + ant_pts[i][0] + " <= " + minx )
 
+                xinc += 1;
+                if (!edge_time[i]){
+                    antenna_contact[i] = true;
+                    if (bug.angle > HALFPI && bug.angle <= PIANDAHALF) contact_angle[i] = PI - bug.angle;
+                    else if (bug.angle < PIANDAHALF)                   contact_angle[i] = bug.angle;
+                    else                                               contact_angle[i] = TWOPI - bug.angle;
+                }
+            }
+            else if(ant_pts[i][0] >= maxx){
+                console.log("x-" + i + " " + ant_pts[i][0] + " >= " + maxx )
+
+                xinc -= 1;
+                if (!edge_time[i]){
+                    antenna_contact[i] = true;
+                    if (bug.angle <= PIANDAHALF && bug.angle >= HALFPI) contact_angle[i] = bug.angle - PI;
+                    else if (bug.angle > PIANDAHALF)                    contact_angle[i] = TWOPI - bug.angle;
+                    else                                                contact_angle[i] = - bug.angle;
+                }
+            }
+            if(ant_pts[i][1] <= miny){
+                console.log("y-" + i + " " + ant_pts[i][1] + " <= " + miny )
+
+                yinc += 1;
+                if (!edge_time[i]){
+                    antenna_contact[i] = true;
+                    if (bug.angle <= PI) contact_angle[i] = bug.angle - HALFPI;
+                    else                 contact_angle[i] = PIANDAHALF - bug.angle;
+                }
+            }
+            else if(ant_pts[i][1] >= maxy){
+                console.log("y-" + i + " " + ant_pts[i][0] + " <= " + minx )
+
+                yinc -= 1;
+                if (!edge_time[i]){
+                    antenna_contact[i] = true;
+                    if (bug.angle <= PI ) contact_angle[i] = HALFPI - bug.angle;
+                    else                  contact_angle[i] = bug.angle - PIANDAHALF;
+                }
+            }
+
+            // check cercus for fun
+
+            if (cer_pts[i][0] <= minx)      xinc += 1;
+            else if (cer_pts[i][0] >= maxx) xinc -= 1;
+            if (cer_pts[i][1] <= miny)      yinc += 1;
+            else if (cer_pts[i][1] >= maxy) yinc -= 1;
+
+
+/*
             // check box edge contact
-            for (int j=0; j<environment->nblock; ++j)
-            {
+            for (int j=0; j<environment->nblock; ++j){
                 // first check bug.antenna
                 if (bugx < environment->blockx[j]
                 && bug.antennaX[i] >= environment->blockx[j] - 1
                 && bug.antennaY[i] >= environment->blocky[j]
-                && bug.antennaY[i] <= environment->blocky[j] + BLOCKHEIGHT)
-                {
+                && bug.antennaY[i] <= environment->blocky[j] + BLOCKHEIGHT){
                     xinc -= 1;
-                    if (!edget[i])
-                    {
+                    if (!edget[i]){
                         bug.antenna[i] = true;
-                        if (bug.angle <= PIANDAHALF && bug.angle >= HALFPI)
-                            bug.antcang[i] = bug.angle - PI;
-                        else if (bug.angle > PIANDAHALF)
-                            bug.antcang[i] = TWOPI - bug.angle;
-                        else
-                            bug.antcang[i] = - bug.angle;
+                        if (bug.angle <= PIANDAHALF && bug.angle >= HALFPI) bug.antcang[i] = bug.angle - PI;
+                        else if (bug.angle > PIANDAHALF)                    bug.antcang[i] = TWOPI - bug.angle;
+                        else                                                bug.antcang[i] = - bug.angle;
                     }
-                }
-                else if (bugx > environment->blockx[j] + BLOCKWIDTH
+                }else if (bugx > environment->blockx[j] + BLOCKWIDTH
                 && bug.antennaX[i] <= environment->blockx[j] + BLOCKWIDTH + 1
                 && bug.antennaY[i] >= environment->blocky[j]
-                && bug.antennaY[i] <= environment->blocky[j] + BLOCKHEIGHT)
-                {
+                && bug.antennaY[i] <= environment->blocky[j] + BLOCKHEIGHT){
                     xinc += 1;
-                    if (!edget[i])
-                    {
+                    if (!edget[i]){
                         bug.antenna[i] = true;
-                        if (bug.angle > HALFPI && bug.angle <= PIANDAHALF)
-                            bug.antcang[i] = PI - bug.angle;
-                        else if (bug.angle < PIANDAHALF)
-                            bug.antcang[i] = bug.angle;
-                        else
-                            bug.antcang[i] = TWOPI - bug.angle;
+                        if (bug.angle > HALFPI && bug.angle <= PIANDAHALF) bug.antcang[i] = PI - bug.angle;
+                        else if (bug.angle < PIANDAHALF)                   bug.antcang[i] = bug.angle;
+                        else                                               bug.antcang[i] = TWOPI - bug.angle;
                     }
                 }
                 if (bugy < environment->blocky[j]
                 && bug.antennaY[i] >= environment->blocky[j] - 2
                 && bug.antennaX[i] >= environment->blockx[j]
-                && bug.antennaX[i] <= environment->blockx[j] + BLOCKWIDTH)
-                {
+                && bug.antennaX[i] <= environment->blockx[j] + BLOCKWIDTH){
                     yinc -= 1;
-                    if (!edget[i])
-                    {
+                    if (!edget[i]){
                         bug.antenna[i] = true;
-                        if (bug.angle <= PI )
-                            bug.antcang[i] = HALFPI - bug.angle;
-                        else
-                            bug.antcang[i] = bug.angle - PIANDAHALF;
+                        if (bug.angle <= PI ) bug.antcang[i] = HALFPI - bug.angle;
+                        else                  bug.antcang[i] = bug.angle - PIANDAHALF;
                     }
                 }
                 else if (bugy > environment->blocky[j] + BLOCKHEIGHT
                 && bug.antennaY[i] <= environment->blocky[j] + BLOCKHEIGHT + 2
                 && bug.antennaX[i] >= environment->blockx[j]
-                && bug.antennaX[i] <= environment->blockx[j] + BLOCKWIDTH)
-                {
+                && bug.antennaX[i] <= environment->blockx[j] + BLOCKWIDTH){
                     yinc += 1;
-                    if (!edget[i])
-                    {
+                    if (!edget[i]){
                         bug.antenna[i] = true;
-                        if (bug.angle <= PI)
-                            bug.antcang[i] = bug.angle - HALFPI;
-                        else
-                            bug.antcang[i] = PIANDAHALF - bug.angle;
+                        if (bug.angle <= PI) bug.antcang[i] = bug.angle - HALFPI;
+                        else                 bug.antcang[i] = PIANDAHALF - bug.angle;
                     }
                 }
                 // now check cerci
                 if (bugx < environment->blockx[j]
                 && bug.cerciX[i] >= environment->blockx[j] - 1
                 && bug.cerciY[i] >= environment->blocky[j]
-                && bug.cerciY[i] <= environment->blocky[j] + BLOCKHEIGHT)
-                    xinc -= 1;
+                && bug.cerciY[i] <= environment->blocky[j] + BLOCKHEIGHT) xinc -= 1;
                 else if (bugx > environment->blockx[j] + BLOCKWIDTH
                 && bug.cerciX[i] <= environment->blockx[j] + BLOCKWIDTH + 2
                 && bug.cerciY[i] >= environment->blocky[j]
-                && bug.cerciY[i] <= environment->blocky[j] + BLOCKHEIGHT)
-                    xinc += 1;
+                && bug.cerciY[i] <= environment->blocky[j] + BLOCKHEIGHT) xinc += 1;
                 if (bugy < environment->blocky[j]
                 && bug.cerciY[i] >= environment->blocky[j] - 2
                 && bug.cerciX[i] >= environment->blockx[j]
-                && bug.cerciX[i] <= environment->blockx[j] + BLOCKWIDTH)
-                    yinc -= 1;
+                && bug.cerciX[i] <= environment->blockx[j] + BLOCKWIDTH) yinc -= 1;
                 else if (bugy > environment->blocky[j] + BLOCKHEIGHT
                 && bug.cerciY[i] <= environment->blocky[j] + BLOCKHEIGHT + 2
                 && bug.cerciX[i] >= environment->blockx[j]
-                && bug.cerciX[i] <= environment->blockx[j] + BLOCKWIDTH)
-                    yinc += 1;
+                && bug.cerciX[i] <= environment->blockx[j] + BLOCKWIDTH) yinc += 1;
             }
+*/
         }
-        */
-        /*
-        if (xinc || yinc)  // if it bounced (it didn't if touch was on both sides)
-        { // calculate bug position from old position + bounce
-            bug.x += 20.5 * sgn(xinc) * bug_const.DT;  // (adjustable!) bounce
-            bug.y += 20.5 * sgn(yinc) * bug_const.DT;
-            for(int i=0; i<2; ++i) // recalculate bug.antenna & cercus tip positions
-            {
-                bug.antennaX[i] = bug.x + bug_const.antl * cos(bug.angle + bug_const.antang[i]);
-                bug.antennaY[i] = bug.y + bug_const.antl * sin(bug.angle + bug_const.antang[i]);
-                bug.cerciX[i] = bug.x + bug_const.cercl * cos(bug.angle + bug_const.cercang[i]);
-                bug.cerciY[i] = bug.y + bug_const.cercl * sin(bug.angle + bug_const.cercang[i]);
-            }
-        }
-        else
-        {*/
-            var oldx = bug.x;
-            var oldy = bug.y;
+
+
+        if (xinc || yinc){
+            // if it bounced (it didn't if touch was on both sides)
+            // calculate bug position from old position + bounce, ignore forces
+            bug.x += 20.5 * Math.sign(xinc) * DT;  // (adjustable!) bounce
+            bug.y += 20.5 * Math.sign(yinc) * DT;
+        }else{
+            // or use the force-determined position if it didn't bounce
             bug.x = bugx;
             bug.y = bugy;
             //console.log("b: (" + bug.x + ", " + bug.y + ")");
-/*      } */
+        }
 
         for(var i in bug.leg_index) // calculate leg angles & foot positions
         {
             var n = bug.leg_index[i];
             if(bug.last_foot[n] && bug.foot[n])
-            { // foot stays down, stretch leg
+            { // foot stays down, slides along ground
 
                 var fpt = $scope.transform(bug.foot_points, oldx, oldy, bug.angle, 1.0);
                 var lgt = $scope.transform(bug.leg_points, bug.x, bug.y, bug.angle, 1.0);
@@ -594,26 +561,26 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
                 if (i < 3)
                 {
-                    while(bug.legang[i] > Math.PI)   bug.legang[i] -= TWOPI;
-                    while(bug.legang[i] <= -Math.PI) bug.legang[i] += TWOPI;
+                    while(bug.legang[i] > PI)   bug.legang[i] -= TWOPI;
+                    while(bug.legang[i] <= -PI) bug.legang[i] += TWOPI;
                 }
                 else
                 {
                     while(bug.legang[i] < 0.)     bug.legang[i] += TWOPI;
                     while(bug.legang[i] >= TWOPI) bug.legang[i] -= TWOPI;
                 }
-                console.log("'" + n + "'[" + i + "]: " + bug.legang[i] );
+                //console.log("'" + n + "'[" + i + "]: " + bug.legang[i] );
             }
             else
-            { // move foot
+            { // foot is up, move leg rather than force body
                 if (bug.last_foot[n] && ((i >= 3 && bug.legang[i] < bug_const.maxlegang[i])
                 || (i < 3 && bug.legang[i] > bug_const.maxlegang[i])))
                     bug.legang[i] = bug_const.maxlegang[i];
                 if (i < 3)
-                    bug.legang[i] += DT * (leg[n].forward_force + leg[n].backward_force) * Math.PI/15;
+                    bug.legang[i] += DT * (leg[n].forward_force + leg[n].backward_force) * PI/15;
                 else
-                    bug.legang[i] -= DT * (leg[n].forward_force + leg[n].backward_force) * Math.PI/15;
-                console.log("*'" + n + "'[" + i + "]: " + bug.legang[i] );
+                    bug.legang[i] -= DT * (leg[n].forward_force + leg[n].backward_force) * PI/15;
+                //console.log("*'" + n + "'[" + i + "]: " + bug.legang[i] );
             }
         }
         /*
@@ -674,7 +641,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         for(var i in leg)
         {
             bug.last_foot[i] = bug.foot[i]; // save foot states
-            leg[i].backward_force = leg[i].forward_force = leg[i].lateral_force = 0;
+            leg[i].backward_force = leg[i].forward_force = leg[i].lateral_force = 0; // clear forces
         }
     }
 
@@ -729,43 +696,30 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                     if (bug.legang[i] >= bug_const.minlegang[i]) value = 1e-008;
                     //console.log("'" + node + "'[" + i + "]: " + value);
                 }
+            }else if(node.in_list(AntennaContact)){
+                var antenna_index = node.slice(-1) // eh "L" or "R"
+                var i = antenna_index == "L" ? 0 : 1;
+                if (!bug.antenna_edge_time[i]){
+                    if (bug.antenna_contact[i]){
+                        bug.antenna_edge_time[i] = 100;
+                        bug.last_edge_contact_angle[i] = bug.antenna_contact_angle[i];
+                        value = 5.09e-009 * bug.last_edge_contact_angle[i];
+                    }else I = 0;
+                }else{
+                    bug.antenna_edge_time[i]--;
+                    value = 5.09e-009 * bug.last_edge_contact_angle[i];
+                }
+            }else if(node.in_list(OdorStrength)){
+                var antenna_index = node.slice(-1) // eh "L" or "R" or "S" for mouth
+                var i = antenna_index == "L" ? 0 : antenna_index == "R" ? 1 : 2;
+                if (i < 2) value = 1e-010 * (i==0? 0.0 : 0.0)/*bug.antenna_odor[j]*/ - 2.5e-012;
+                else       value = 5e-011 * 0.0/*bug.mouth_odor*/ - 5e-011;
             }
             sensors[node] = value;
         }
 /*
-                case Neuron::AntennaContact: // bug.antenna contact
-                    i = (int)strlen(name);
-                    if (name[i-1] == 'L')
-                        j = 0;
-                    else
-                        j = 1;
-                    if (!edget[j])
-                    {
-                        if (bug.antenna[j])
-                        {
-                            edget[j] = 100;
-                            edgecang[j] = bug.antcang[j];
-                            I = *pI * edgecang[j];
-                        }
-                        else
-                            I = 0;
-                    }
-                    else
-                    {
-                        edget[j]--;
-                        I = *pI * edgecang[j];
-                    }
-                break;
 
                 case Neuron::OdorStrength: // bug.odor strength
-                    i = (int)strlen(name);
-                    if (name[i-1] == 'L')
-                        j = 0;
-                    else
-                        if (name[i-1] == 'R')
-                            j = 1;
-                        else
-                            j = 2;
                     if (j < 2)
                         I = *pI * bug.odor[j] - *(pI+1);
                     else
