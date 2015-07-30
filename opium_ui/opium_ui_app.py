@@ -43,7 +43,7 @@ class WebSocketBridge(object):
     def __init__(self):
 
         # non-blocking periodic polling in tornado
-        self.update_rate = 0.25
+        self.update_rate = 0.5
 
         # websocket callback for push messages
         self.ws_callback = None
@@ -83,7 +83,7 @@ class WebSocketBridge(object):
                   'FOOFOO881': { 'name': "optional", 'plates': [ couch5] }};*/
         """
         try:
-            db = couchdb.Server("http://couch.synthego:5984/")["plates"]
+            db = couchdb.Server("http://localhost:5984/")["plates"]
 
             rows = db.iterview(name="plateTask/unfinished_workorders", batch=1000)
 
@@ -113,41 +113,41 @@ class WebSocketBridge(object):
                 plateid = row.id
                 plates[plateid] = doc
 
-            if not work:
-
-                return {"work_id_0":
-                            {'name': "Test data, couch is empty or missing", 'plates':
-                                {"why is this key necessary":
-                                     {'_id': "test plate 0", 'task_index_next': "1", 'task_wip_index': "1", 'tasks':
-                                         [{'name': "task 1"}, {'name': "task 2"}, {'name': "task 3"}]
-                                      }
-                                 }
-                             },
-                        "work_id_1":
-                            {'name': "Fun Work", 'plates':
-                                {"huh why isn't this a list":
-                                     {'id_': "plate 1"},
-                                 "wtf why is there a key here":
-                                     {'id_': "plate 2"}
-                                 }
-                             },
-                        "work_id_2":
-                            {'name': "Something awful", 'plates':
-                                {"huh why isn't this a list":
-                                     {'id_': "plate 1"},
-                                 "wtf why is there a key here":
-                                     {'id_': "plate 2"}
-                                 }
-                             },
-                        "work_id_3":
-                            {'name': "Impending Doom", 'plates':
-                                {"huh why isn't this a list":
-                                     {'id_': "plate 1"},
-                                 "wtf why is there a key here":
-                                     {'id_': "plate 2"}
-                                 }
-                             },
-                        }
+            # if not work:
+            #
+            #     return {"work_id_0":
+            #                 {'name': "Test data, couch is empty or missing", 'plates':
+            #                     {"why is this key necessary":
+            #                          {'_id': "test plate 0", 'task_index_next': "1", 'task_wip_index': "1", 'tasks':
+            #                              [{'name': "task 1"}, {'name': "task 2"}, {'name': "task 3"}]
+            #                           }
+            #                      }
+            #                  },
+            #             "work_id_1":
+            #                 {'name': "Fun Work", 'plates':
+            #                     {"huh why isn't this a list":
+            #                          {'id_': "plate 1"},
+            #                      "wtf why is there a key here":
+            #                          {'id_': "plate 2"}
+            #                      }
+            #                  },
+            #             "work_id_2":
+            #                 {'name': "Something awful", 'plates':
+            #                     {"huh why isn't this a list":
+            #                          {'id_': "plate 1"},
+            #                      "wtf why is there a key here":
+            #                          {'id_': "plate 2"}
+            #                      }
+            #                  },
+            #             "work_id_3":
+            #                 {'name': "Impending Doom", 'plates':
+            #                     {"huh why isn't this a list":
+            #                          {'id_': "plate 1"},
+            #                      "wtf why is there a key here":
+            #                          {'id_': "plate 2"}
+            #                      }
+            #                  },
+            #             }
             return work
         except:
             return None
@@ -273,8 +273,6 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
         if return_msg:
             [con.write_message(return_msg) for con in self.connections]
-
-
 
 app = Application()
 app.listen(8888, address='0.0.0.0')

@@ -105,7 +105,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     console.log('Initialized root controller.');
     $rootScope.connection_status = 'Disconnected, Click to Connect';
 
-    $scope.selected_work = undefined;
+    $scope.selected_work = null;
     $scope.work_orders = {};
     /*
         eg:     { "work_id": ["plate instances"],
@@ -118,12 +118,27 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     /* reconnect to web sockets / python code --> attach to eg ng-click in an html element */
     $scope.reconnect = function(){
         WebSocketService.initialize();
-    }
+    };
 
     $scope.get_work_details = function(work){
         $scope.selected_work = work;
-    }
+        $scope.set_session_variable("selected_work", work);
+    };
 
+    $scope.set_session_variable = function(key, value){
+        if(!value){
+            $window.sessionStorage.removeItem(key);
+            return;
+        }
+        $window.sessionStorage.setItem(key, value);
+        console.log("sessionStorage['" + key + "'] == '" + value +"'");
+    };
+
+    $scope.get_session_variable = function(key){
+        var value = $window.sessionStorage.getItem(key);
+        console.log("sessionStorage['" + key + "'] was '" + value +"'");
+        return value;
+    };
 
     $rootScope.switchBoard = function(message) {
         // console.log(message);
@@ -133,11 +148,28 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 console.log(message);
                 // TODO -- initialize client state
                 $scope.work_orders = message.payload;
+                var last_selected = $scope.get_session_variable("selected_work");
+                if(last_selected){
+                    console.log("selected_work exists")
+                    if(last_selected in $scope.work_orders){
+                        console.log("restoring selection")
+                        $scope.selected_work = last_selected;
+                    }else{
+                        console.log("clearing selection")
+                        $scope.set_session_variable("selected_work", null);
+                    }
+                }else
+                    console.log("no selected_work")
                 break;
 
             case 'update':
                 // TODO -- periodic update client state
                 $scope.work_orders = message.payload;
+                if($scope.work_orders.length == 0) {
+                    console.log("out of work, clearing selection");
+                    $scope.selected_work = null;
+                    $scope.set_session_variable("selected_work", null);
+                }
                 break;
 
             default:
@@ -145,6 +177,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 console.log(message);
                 break;
         }
+
         $scope.$apply();
     }
 

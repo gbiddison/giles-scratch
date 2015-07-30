@@ -9,6 +9,10 @@
     <meta name="viewport" content="initial-scale=1">
 
     <style>
+        .md-headline { font-size: 125% }
+        .md-display-1 { font-size: 210% }
+        .md-title { font-size: 125%}
+
         .sample-show-hide {  }
         .sample-show-hide {
             -webkit-transition: all linear 0.5s;
@@ -22,7 +26,7 @@
         }
 
         .task-card {
-            padding: 25px;
+            padding: 1.25em;
             text-align: center;
         }
 
@@ -37,7 +41,7 @@
     </md-content>
 
     <md-content flex layout="row">
-        <md-card flex="30" >
+        <md-card flex="25" >
             <md-card-content>
                 <div layout="row" layout-align="center center">
                     <h3 class="md-headline">Opium Work in progress</h3>
@@ -75,7 +79,7 @@
                     </div>
 
                     <div ng-repeat="instance in work_orders[selected_work].plates">
-                        <md-progress-linear class="" md-mode="determinate"  ng-value="{{(instance.task_index_next/instance.tasks.length) * 100}}"></md-progress-linear>
+                        <md-progress-linear class="" md-mode="determinate"  value="{{(instance.task_index_next/instance.tasks.length) * 100}}"></md-progress-linear>
                         <div layout="row" layout-align="space-between center" layout-padding>
                             <h3 class="md-title"><i>{{ instance._id }}</i></h3>
                             <p>{{(instance.task_index_next/instance.tasks.length) * 100 | number:0}}% complete ({{instance.task_index_next}} / {{instance.tasks.length}})</p>
