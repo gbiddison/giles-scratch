@@ -11,6 +11,17 @@ html, body {
 }
 
 /* for some reason the md icon button has an offset if we don't do this */
-.md-button.md-fab.md-mini{
-    line-height: 0px;
-}
+.md-button.md-fab.md-mini{ line-height: 0px; }
+
+.md-headline { font-size: 125% }
+.md-display-1 { font-size: 210% }
+.md-title { font-size: 125%}
+
+.sample-show-hide {  }
+.sample-show-hide { -webkit-transition: all linear 0.5s; transition: all linear 0.5s; }
+.sample-show-hide.ng-hide {  opacity: 0;  }
+#file-input {  display: none;  }
+
+.selected_work { font-style: italic; }
+
+.task-card { padding: 1.25em; text-align: center; }

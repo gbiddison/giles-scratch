@@ -31,6 +31,8 @@ CALLBACK_KEY = 'callback_id'
 
 angular_app_path = os.path.join(os.path.dirname(__file__))
 
+couch_url = "localhost:5984"
+syn_url = "localhost:9080"
 
 class WebSocketBridge(object):
     """
@@ -48,8 +50,11 @@ class WebSocketBridge(object):
         # websocket callback for push messages
         self.ws_callback = None
 
+        # handle to couch API
+        self.couch_db = couchdb.Server("http://%s/" % couch_url)
+
         # handle to work-order API
-        self.work_order_db = WorkOrder()
+        self.work_order_db = WorkOrder(server=syn_url)
 
         # cache names of work-orders that we've looked up so we don't hit SAD 10 times a sec
         self.name_cache = {}
@@ -83,7 +88,7 @@ class WebSocketBridge(object):
                   'FOOFOO881': { 'name': "optional", 'plates': [ couch5] }};*/
         """
         try:
-            db = couchdb.Server("http://localhost:5984/")["plates"]
+            db = self.couch_db["plates"]
 
             rows = db.iterview(name="plateTask/unfinished_workorders", batch=1000)
 
@@ -104,10 +109,15 @@ class WebSocketBridge(object):
                     else:
                         # try to query SAD for human readable
                         result = self.work_order_db.get_full_workorder(workid)
+                        print(result)
                         if 'human_readable_name' in result:
                             name = result['human_readable_name']
+                            print(name)
                             work[workid]['name'] = name
-                            self.add_name_to_cache(workid, name)  # manage cache size
+                            self.add_name_to_cache(workid, name)    # put SAD response in cache
+                        else:
+                            print("no name!")
+                            self.add_name_to_cache(workid, workid)  # stuff it in cache anyway
 
                 plates = work[workid]['plates']
                 plateid = row.id

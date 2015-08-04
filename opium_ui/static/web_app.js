@@ -140,6 +140,12 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         return value;
     };
 
+    $scope.is_empty =  function(obj){
+        for(var k in obj)
+            if(obj.hasOwnProperty(k)) return false;
+        return true;
+    };
+
     $rootScope.switchBoard = function(message) {
         // console.log(message);
 
@@ -165,7 +171,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             case 'update':
                 // TODO -- periodic update client state
                 $scope.work_orders = message.payload;
-                if($scope.work_orders.length == 0) {
+                console.log('work: ' + $scope.work_orders);
+                if($scope.selected_work && $scope.is_empty($scope.work_orders)) {
                     console.log("out of work, clearing selection");
                     $scope.selected_work = null;
                     $scope.set_session_variable("selected_work", null);
