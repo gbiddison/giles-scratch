@@ -123,6 +123,11 @@ class WebSocketBridge(object):
                 plateid = row.id
                 plates[plateid] = doc
 
+            # sort the plates by name in reverse, so that SynthegoCartridge is always near top
+            import collections
+            for wo in work.keys():
+                work[wo]['plates'] = collections.OrderedDict(sorted(work[wo]['plates'].items(), reverse=True))
+
             # if not work:
             #
             #     return {"work_id_0":
