@@ -90,7 +90,7 @@ class WebSocketBridge(object):
         try:
             db = self.couch_db["plates"]
 
-            rows = db.iterview(name="plateTask/unfinished_workorders", batch=1000)
+            rows = db.iterview(name="plates/unfinished_workorders", batch=1000)
 
             work = {}
             for row in rows:
