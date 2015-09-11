@@ -129,42 +129,29 @@ class WebSocketBridge(object):
             for wo in work.keys():
                 work[wo]['plates'] = collections.OrderedDict(sorted(work[wo]['plates'].items(), reverse=True))
 
-            # if not work:
-            #
-            #     return {"work_id_0":
-            #                 {'name': "Test data, couch is empty or missing", 'plates':
-            #                     {"why is this key necessary":
-            #                          {'_id': "test plate 0", 'task_index_next': "1", 'task_wip_index': "1", 'tasks':
-            #                              [{'name': "task 1"}, {'name': "task 2"}, {'name': "task 3"}]
-            #                           }
-            #                      }
-            #                  },
-            #             "work_id_1":
-            #                 {'name': "Fun Work", 'plates':
-            #                     {"huh why isn't this a list":
-            #                          {'id_': "plate 1"},
-            #                      "wtf why is there a key here":
-            #                          {'id_': "plate 2"}
-            #                      }
-            #                  },
-            #             "work_id_2":
-            #                 {'name': "Something awful", 'plates':
-            #                     {"huh why isn't this a list":
-            #                          {'id_': "plate 1"},
-            #                      "wtf why is there a key here":
-            #                          {'id_': "plate 2"}
-            #                      }
-            #                  },
-            #             "work_id_3":
-            #                 {'name': "Impending Doom", 'plates':
-            #                     {"huh why isn't this a list":
-            #                          {'id_': "plate 1"},
-            #                      "wtf why is there a key here":
-            #                          {'id_': "plate 2"}
-            #                      }
-            #                  },
-            #             }
             return work
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            import sys
+            sys.exit(-1)
+
+    def list_factories(self):
+        try:
+            db = self.couch_db["settingsdb"]
+
+            rows = db.iterview(name="opm/opm", batch=1000)
+            factories = {}
+
+            for row in rows:
+                state = row.value
+                if "instrument_state" not in state:
+                    continue
+
+                factory = row.id
+                factories[factory] = row.value
+
+            return factories
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -183,7 +170,10 @@ class WebSocketBridge(object):
 
         # transfer state to javascript
         if self.ws_callback is not None:
-            payload = self.list_work_orders()
+            payload = {
+                'work': self.list_work_orders(),
+                'factories': self.list_factories()
+            }
             if payload is not None:
                 self.ws_callback(UPDATE_KEY, payload)
 
@@ -279,11 +269,11 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         if (COMMAND_KEY in message_dict.keys()) and 'init' in message_dict[COMMAND_KEY]:
             return_msg = {
                 COMMAND_KEY: 'init response',
-                PAYLOAD_KEY: self.application.wsbridge.list_work_orders()
+                PAYLOAD_KEY: {
+                    "work": self.application.wsbridge.list_work_orders(),
+                    "factories": self.application.wsbridge.list_factories()
+                }
             }
-        elif (COMMAND_KEY in message_dict.keys()) and (PAYLOAD_KEY in message_dict.keys()) \
-                and ('sensor' in message_dict[COMMAND_KEY]):
-            self.application.wsbridge.update_sensors(message_dict[PAYLOAD_KEY])
         else:
             print(message_dict)
         # else:

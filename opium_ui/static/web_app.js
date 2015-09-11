@@ -10,7 +10,7 @@ app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
     var callbacks = {};
     var currentCallbackId = 0;
     var ws = undefined;
-
+7
     function sendRequest(request) {
         var defer = $q.defer();
         var callbackId = getCallbackId();
@@ -105,6 +105,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     console.log('Initialized root controller.');
     $rootScope.connection_status = 'Disconnected, Click to Connect';
 
+    $scope.display_mode = null;
+
+    $scope.selected_factory = null;
+    $scope.factories = {};
+
     $scope.selected_work = null;
     $scope.work_orders = {};
     /*
@@ -121,8 +126,15 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     };
 
     $scope.get_work_details = function(work){
+        $scope.display_mode = "work"
         $scope.selected_work = work;
         $scope.set_session_variable("selected_work", work);
+    };
+
+    $scope.get_factory_details = function(factory){
+        $scope.display_mode = "factory"
+        $scope.selected_factory = factory;
+        $scope.set_session_variable("selected_factory", factory);
     };
 
     $scope.set_session_variable = function(key, value){
@@ -152,34 +164,56 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         switch (message.command) {
             case 'init response':
                 console.log(message);
-                // TODO -- initialize client state
-                $scope.work_orders = message.payload;
-                if( !$scope.work_orders){
+                $scope.work_orders = message.payload.work;
+                $scope.factories = message.payload.factories;
+                if( !$scope.work_orders) {
                     console.log("no work!")
-                    break;
+                } else {
+                    var last_selected_work = $scope.get_session_variable("selected_work");
+                    if (last_selected_work) {
+                        console.log("selected_work exists")
+                        if (last_selected_work in $scope.work_orders) {
+                            console.log("restoring selected work")
+                            $scope.selected_work = last_selected_work;
+                        } else {
+                            console.log("clearing selected work")
+                            $scope.set_session_variable("selected_work", null);
+                        }
+                    } else
+                        console.log("no selected_work")
                 }
-                var last_selected = $scope.get_session_variable("selected_work");
-                if(last_selected){
-                    console.log("selected_work exists")
-                    if(last_selected in $scope.work_orders){
-                        console.log("restoring selection")
-                        $scope.selected_work = last_selected;
-                    }else{
-                        console.log("clearing selection")
-                        $scope.set_session_variable("selected_work", null);
-                    }
-                }else
-                    console.log("no selected_work")
+                if( !$scope.factories) {
+                    console.log("no factories!")
+                } else {
+                    var last_selected_factory = $scope.get_session_variable("selected_factory");
+                    if (last_selected_factory) {
+                        console.log("selected_factory exists")
+                        if (last_selected_factory in $scope.factories) {
+                            console.log("restoring selected factory")
+                            $scope.selected_factory = last_selected_factory;
+                        } else {
+                            console.log("clearing selected factory")
+                            $scope.set_session_variable("selected_factory", null);
+                        }
+                    } else
+                        console.log("no selected_factory")
+                }
                 break;
 
             case 'update':
-                // TODO -- periodic update client state
-                $scope.work_orders = message.payload;
+                $scope.work_orders = message.payload.work;
+                $scope.factories = message.payload.factories;
                 console.log('work: ' + $scope.work_orders);
+                console.log('factories: ' + $scope.factories);
                 if($scope.selected_work && $scope.is_empty($scope.work_orders)) {
                     console.log("out of work, clearing selection");
                     $scope.selected_work = null;
                     $scope.set_session_variable("selected_work", null);
+                }
+                if($scope.selected_factory && $scope.is_empty($scope.factories)) {
+                    console.log("out of factories, clearing selection");
+                    $scope.selected_factory = null;
+                    $scope.set_session_variable("selected_factory", null);
                 }
                 break;
 

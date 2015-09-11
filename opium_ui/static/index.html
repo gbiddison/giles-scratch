@@ -44,7 +44,26 @@
         <md-card flex="25" >
             <md-card-content>
                 <div layout="row" layout-align="center center">
-                    <h3 class="md-headline">Opium Work in progress</h3>
+                    <h3 class="md-headline">Opium Factory View</h3>
+                    <span flex /><!-- span-flex here eats up remaining space in the row while leaving the button square-->
+                    <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="reconnect()">
+                        <ng-md-icon icon="refresh" style="fill:#ffffff"></ng-md-icon>
+                    </md-button>
+                </div>
+
+                <md-list layout-padding>
+                    <md-list-item ng-repeat="(factory, details) in factories"
+                                  layout-align="center center"
+                                  ng-click="get_factory_details(factory)"
+                                    style="text-overflow: ellipsis">
+                            <div class="md-list-item-text-2">
+                                <h3 ng-class="factory == selected_factory ? 'selected_factory' : ''">{{factory}}</h3>
+                            </div>
+                    </md-list-item>
+                </md-list>
+
+                <div layout="row" layout-align="center center">
+                    <h3 class="md-headline">Opium Work Orders</h3>
                     <span flex /><!-- span-flex here eats up remaining space in the row while leaving the button square-->
                     <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="reconnect()">
                         <ng-md-icon icon="refresh" style="fill:#ffffff"></ng-md-icon>
@@ -69,7 +88,7 @@
             <!-- <div ng-if="ui_state=='workorder'" layout-padding> -->
             <div layout-padding>
 
-                <div ng-show="selected_work">
+                <div ng-show="selected_work && display_mode=='work'">
                     <div layout="row" layout-align="space-between center">
                         <h3 class="md-display-1"><i>{{work_orders[selected_work].name}}</i></h3>
                     </div>
@@ -98,6 +117,37 @@
                         </div>
                     </div>
                 </div> <!-- selected work -->
+
+                <div ng-show="selected_factory && display_mode=='factory'">
+                    <div layout="row" layout-align="space-between center">
+                        <h3 class="md-display-1"><i>{{selected_factory}}</i></h3>
+                    </div>
+
+                    <div layout-padding>
+                        <p>factory state</p>
+                    </div>
+
+                    <div ng-repeat="(instrument, instrument_state) in factories[selected_factory].instrument_state">
+                        <md-progress-linear class="" md-mode="determinate"  value="0"></md-progress-linear>
+                        <div layout="row" layout-align="space-between center" layout-padding>
+                            <h3 class="md-title"><i>{{ instrument }}</i></h3>
+                            <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="reconnect()">
+                                <ng-md-icon icon="refresh" style="fill:#ffffff"></ng-md-icon>
+                            </md-button>
+                        </div>
+                        <!-- Display current task list, highlighting executing and current tasks -->
+                        <div layout="row" layout-align="space-between center" layout-padding>
+                            <div ng-repeat="(location, location_state) in instrument_state">
+                                <div><md-card class="task-card">
+                                    <div><b>{{location}}</b></div>
+                                    <div style="color:deepskyblue">{{location_state.plate_on_location}}</div>
+                                    <div style="color:deeppink">{{location_state.plate_reserved_for}}</div>
+                                </md-card></div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- selected work -->
+
             </div>
         </md-content>
     </md-content>
