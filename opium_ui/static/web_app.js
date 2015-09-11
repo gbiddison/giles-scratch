@@ -154,6 +154,10 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 console.log(message);
                 // TODO -- initialize client state
                 $scope.work_orders = message.payload;
+                if( !$scope.work_orders){
+                    console.log("no work!")
+                    break;
+                }
                 var last_selected = $scope.get_session_variable("selected_work");
                 if(last_selected){
                     console.log("selected_work exists")

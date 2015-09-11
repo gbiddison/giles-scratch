@@ -91,13 +91,14 @@ class WebSocketBridge(object):
             db = self.couch_db["plates"]
 
             rows = db.iterview(name="plates/unfinished_workorders", batch=1000)
-
             work = {}
+
             for row in rows:
-                doc = db[row.id]
-                if 'workorderid' not in doc:
+                try:
+                    doc = db[row.id]
+                except couchdb.ResourceNotFound:  # resource may have been deleted after our view ran, skip it
                     continue
-                workid = doc['workorderid']
+                workid = row.value
                 if workid not in work:
                     work[workid] = {'name': workid, 'plates': {}}
 
@@ -164,8 +165,11 @@ class WebSocketBridge(object):
             #                  },
             #             }
             return work
-        except:
-            return None
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            import sys
+            sys.exit(-1)
 
     @gen.engine
     def device_loop(self):
