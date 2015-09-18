@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import collections
 import json
 import logging
 import os
@@ -125,11 +126,12 @@ class WebSocketBridge(object):
                 plates[plateid] = doc
 
             # sort the plates by name in reverse, so that SynthegoCartridge is always near top
-            import collections
             for wo in work.keys():
                 work[wo]['plates'] = collections.OrderedDict(sorted(work[wo]['plates'].items(), reverse=True))
 
-            return work
+            # sort the work orders as well
+            sorted_work = collections.OrderedDict(sorted(work.items()))
+            return sorted_work
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -148,10 +150,20 @@ class WebSocketBridge(object):
                 if "instrument_state" not in state:
                     continue
 
-                factory = row.id
-                factories[factory] = row.value
+                instrument_state = state['instrument_state']
+                # sort the instrument locations sub-dict by location name / key
+                for instrument_name, locations in instrument_state.items():
+                    instrument_state[instrument_name] = collections.OrderedDict(
+                        sorted(instrument_state[instrument_name].items()))
 
-            return factories
+                # sort the instrument_state sub-dict by instrument name / key
+                state['instrument_state'] = collections.OrderedDict(sorted(instrument_state.items()))
+
+                factories[row.id] = state
+
+            # sort the factories by key
+            sorted_factories = collections.OrderedDict(sorted(factories.items()))
+            return sorted_factories
         except Exception as e:
             import traceback
             traceback.print_exc()

@@ -36,10 +36,9 @@
 <md-content flex layout="column">
     <md-content style="height:50px;">
         <div>
-<!--            put something here -->
+            <h3>Opium is dope</h3>
         </div>
     </md-content>
-
     <md-content flex layout="row">
         <md-card flex="25" >
             <md-card-content>
@@ -84,7 +83,6 @@
         </md-card>
 
         <md-content flex layout="column">
-            <!-- TODO -- maybe use UI state to show plate related stuff? -->
             <!-- <div ng-if="ui_state=='workorder'" layout-padding> -->
             <div layout-padding>
 
@@ -106,6 +104,7 @@
                                 <ng-md-icon icon="refresh" style="fill:#ffffff"></ng-md-icon>
                             </md-button>
                         </div>
+
                         <!-- Display current task list, highlighting executing and current tasks -->
                         <div layout="row" layout-align="space-between center" layout-padding>
                             <div ng-repeat="task in instance.tasks">
@@ -119,34 +118,44 @@
                 </div> <!-- selected work -->
 
                 <div ng-show="selected_factory && display_mode=='factory'">
-                    <div layout="row" layout-align="space-between center">
+                    <div layout="row">
                         <h3 class="md-display-1"><i>{{selected_factory}}</i></h3>
                     </div>
-
-                    <div layout-padding>
-                        <p>factory state</p>
+                    <div>
+                        <h4>Legend</h4>
+                        <div style="color:deeppink">location reserved, plate has not arrived</div>
+                        <div style="color:burlywood">plate in transit</div>
+                        <div style="color:wheat">plate has arrived</div>
+                        <div style="color:lawngreen">task started</div>
+                        <div style="color:deepskyblue">task complete</div>
                     </div>
 
-                    <div ng-repeat="(instrument, instrument_state) in factories[selected_factory].instrument_state">
-                        <md-progress-linear class="" md-mode="determinate"  value="0"></md-progress-linear>
-                        <div layout="row" layout-align="space-between center" layout-padding>
-                            <h3 class="md-title"><i>{{ instrument }}</i></h3>
-                            <md-button class="md-fab md-mini md-primary md-hue-1" ng-click="reconnect()">
-                                <ng-md-icon icon="refresh" style="fill:#ffffff"></ng-md-icon>
-                            </md-button>
-                        </div>
-                        <!-- Display current task list, highlighting executing and current tasks -->
-                        <div layout="row" layout-align="space-between center" layout-padding>
-                            <div ng-repeat="(location, location_state) in instrument_state">
-                                <div><md-card class="task-card">
-                                    <div><b>{{location}}</b></div>
-                                    <div style="color:deepskyblue">{{location_state.plate_on_location}}</div>
-                                    <div style="color:deeppink">{{location_state.plate_reserved_for}}</div>
-                                </md-card></div>
-                            </div>
+                    <div layout="row" layout-align="space-between center" layout-wrap>
+                        <div ng-repeat="(instrument, instrument_state) in factories[selected_factory].instrument_state">
+                            <md-card class="task-card">
+                                <h3 class="md-title"><i>{{ instrument }}</i></h3>
+                                <div layout="row" layout-align="space-between center" layout-wrap >
+                                    <div ng-repeat="(location, ls) in instrument_state">
+                                        <md-card class="location-card" >
+                                            <div><b>{{location}}</b></div>
+                                            <!--
+                                             RED: plate is moving to location (!task_ready, !task_started, !plate_done)
+                                             YELLOW: plate is on location, but not yet running (task_ready, !task_started, !plate_done)
+                                             GREEN: plate is on location, task running (!task_ready, task_started, !plate_done)
+                                             BLUE: plate is on location, task complete (!task_ready, !task_started, plate_done)
+                                            -->
+                                            <div ng-if="ls.plate_on_location!=ls.plate_reserved_for" style="color:deeppink">{{ls.plate_reserved_for}}</div>
+                                            <div ng-if="ls.plate_on_location==ls.plate_reserved_for && !(ls.task_ready || ls.task_started || ls.plate_done)" style="color:burlywood">{{ls.plate_reserved_for}}</div>
+                                            <div ng-if="ls.task_ready" style="color:wheat">{{ls.plate_on_location}}</div>
+                                            <div ng-if="ls.task_started" style="color:lawngreen">{{ls.plate_on_location}}</div>
+                                            <div ng-if="ls.plate_done" style="color:deepskyblue">{{ls.plate_on_location}}</div>
+                                        </md-card>
+                                    </div>
+                                </div>
+                            </md-card>
                         </div>
                     </div>
-                </div> <!-- selected work -->
+                </div> <!-- selected factory -->
 
             </div>
         </md-content>
