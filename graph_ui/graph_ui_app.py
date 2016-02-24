@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import json
 import logging
 import os
@@ -40,6 +42,9 @@ class WebSocketBridge(object):
         # websocket callback for push messages
         self.ws_callback = None
 
+        import sys
+        sys.path.append('../neural2')
+        sys.path.append('../neural2/gui')
         from neuralnetio import NeuralIO
         path = '../neural2/nets/nerve_sim_layout_1.nui'
         self.net = NeuralIO.create(path)
