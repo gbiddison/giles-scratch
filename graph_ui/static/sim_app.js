@@ -1,7 +1,7 @@
 /**
  * Created by gbiddison on 7/10/15.
  */
-SCALE = 1.0;
+SCALE = 0.5;
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
@@ -137,7 +137,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         ctx.stroke();
     }
 
-    $scope.transform = function(points, translate_x, translate_y, radians, scale){
+    $scope.transform = function(points, translate_x, translate_y, radians){
         //radians = -(radians + Math.PI/2.0); // to get counter-clockwise rotation, orientated 0.0 = right facing
         var result = points.slice(); // copy array
         for(var i in points){
@@ -146,8 +146,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             var x = x0;
             var y = y0;
 
-            x = scale * (x0 * Math.cos(radians) - y0 * Math.sin(radians)) + translate_x;
-            y = scale * (x0 * Math.sin(radians) + y0 * Math.cos(radians)) + translate_y;
+            x = SCALE * (x0 * Math.cos(radians) - y0 * Math.sin(radians)) + translate_x;
+            y = SCALE * (x0 * Math.sin(radians) + y0 * Math.cos(radians)) + translate_y;
             result[i] = [x, y];
         }
         return result;
@@ -163,7 +163,6 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var x = bug.x + ctx.canvas.width/2.;
         var y = bug.y + ctx.canvas.height/2.;
         //console.log("rx: (" + x + ", " + y + ")");
-        var scale = SCALE;
 
         var leg_points = bug.leg_points;    // we draw from "leg" to "foot"
         var foot_points = bug.foot_points;
@@ -173,29 +172,29 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         }
 
         //draw head
-        $scope.draw_poly(ctx, $scope.transform(bug.head_points, x, y, bug.angle, scale));
+        $scope.draw_poly(ctx, $scope.transform(bug.head_points, x, y, bug.angle));
         //if (bug.mouth)
         //    dc.DrawLine( bugp.head[0],bugp.head[1],bugp.head[4],bugp.head[5]);
 
         // draw body
-        $scope.draw_poly(ctx, $scope.transform(bug.body_points, x, y, bug.angle, scale));
+        $scope.draw_poly(ctx, $scope.transform(bug.body_points, x, y, bug.angle));
 
         // draw antennae
-        $scope.draw_lines(ctx, $scope.transform(bug.antb_points, x, y, bug.angle, scale),
-                               $scope.transform(bug.ant_points, x, y, bug.angle, scale));
+        $scope.draw_lines(ctx, $scope.transform(bug.antb_points, x, y, bug.angle),
+                               $scope.transform(bug.ant_points, x, y, bug.angle));
         // draw cerci
-        $scope.draw_lines(ctx, $scope.transform(bug.cerb_points, x, y, bug.angle, scale),
-                               $scope.transform(bug.cer_points, x, y, bug.angle, scale));
+        $scope.draw_lines(ctx, $scope.transform(bug.cerb_points, x, y, bug.angle),
+                               $scope.transform(bug.cer_points, x, y, bug.angle));
 
         // draw legs & feet
-        $scope.draw_lines(ctx, $scope.transform(bug.leg_points, x, y, bug.angle, scale),
-                               $scope.transform(bug.foot_points, x, y, bug.angle, scale));
+        $scope.draw_lines(ctx, $scope.transform(bug.leg_points, x, y, bug.angle),
+                               $scope.transform(bug.foot_points, x, y, bug.angle));
         // draw foot down pad
         for(var n in bug.foot){
             if (bug.foot[n]){
                 var i = bug.leg_index.indexOf(n);
-                var fpt = $scope.transform(bug.foot_points, x, y, bug.angle, scale);
-                var w = 2. * scale;
+                var fpt = $scope.transform(bug.foot_points, x, y, bug.angle);
+                var w = 2. * SCALE;
                 var pad = [[fpt[i][0]-w, fpt[i][1]-w], [fpt[i][0]+w, fpt[i][1]-w],
                            [fpt[i][0]+w, fpt[i][1]+w], [fpt[i][0]-w, fpt[i][1]+w]];
                 $scope.draw_poly(ctx, pad);
@@ -349,15 +348,14 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             // console.log("updated foot: " + node + " " + foot_index + " " + value + " " + bug.foot[foot_index])
         }else{
             var leg_index = node.slice(-2); // eg "L1"
-            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 50. * value;  // 50 original
-            else if( node.in_list(forward)) bug.leg[leg_index].forward_force = 50. * value;   // 50 original
-            else if( node.in_list(lateral)) bug.leg[leg_index].lateral_force = 7. * value;
+            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 50. * value * SCALE;  // 50 original
+            else if( node.in_list(forward)) bug.leg[leg_index].forward_force = 50. * value * SCALE;   // 50 original
+            else if( node.in_list(lateral)) bug.leg[leg_index].lateral_force = 7. * value * SCALE;
         }
     };
 
     $scope.calculate_state = function() {
         var ctx = document.getElementById("c").getContext("2d");
-        var scale = SCALE;
         var maxx = ctx.canvas.width / 2., maxy = ctx.canvas.height / 2.;
         var minx = -maxx, miny = -maxy;
         var bug_const = $scope.bug_const;
@@ -405,8 +403,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         // determine antenna contact, antenna contact angle & cercis contact based on new coords
         //
         var xinc = 0, yinc = 0;  // "touching" variables
-        var ant_pts = $scope.transform(bug.ant_points, bugx, bugy, bug.angle, 1.0);
-        var cer_pts = $scope.transform(bug.cer_points, bugx, bugy, bug.angle, 1.0);
+        var ant_pts = $scope.transform(bug.ant_points, bugx, bugy, bug.angle);
+        var cer_pts = $scope.transform(bug.cer_points, bugx, bugy, bug.angle);
 
         var edge_time = bug.antenna_edge_time;
         var antenna_contact = bug.antenna_contact;
@@ -557,8 +555,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             if(bug.last_foot[n] && bug.foot[n])
             { // foot stays down, slides along ground
 
-                var fpt = $scope.transform(bug.foot_points, oldx, oldy, bug.angle, 1.0);
-                var lgt = $scope.transform(bug.leg_points, bug.x, bug.y, bug.angle, 1.0);
+                var fpt = $scope.transform(bug.foot_points, oldx, oldy, bug.angle);
+                var lgt = $scope.transform(bug.leg_points, bug.x, bug.y, bug.angle);
 
                 var d = Math.atan2(fpt[i][1] - lgt[i][1], fpt[i][0] - lgt[i][0]);
                 if (d < 0.)
