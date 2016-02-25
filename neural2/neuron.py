@@ -10,7 +10,7 @@ class Neuron(PickleToXML):
         ,'MinFiringFrequency', 'Gain', 'IntrinsicCurrent', 'LIC', 'HIC', 'LowIC', 'HighIC']
     __next_id = 0 # static id for unnamed neurons
 
-    TimeConstant = 1.0 / 200.0 # Seconds per simulated time step
+    TimeConstant = 1.0 / 400.0 # Seconds per simulated time step
     ICType_VInf = 0
     ICType_Random = 1
     ICType_None = 2
@@ -179,14 +179,15 @@ class Neuron(PickleToXML):
         if debug: print(self.Name + " current_2 " + str(current))
         if debug: print(self.Name + " nextVolts " + str(self._nextVoltage))
         if debug: print(self.Name + " threshold " + str(self.ThresholdVoltage))
+        if debug: print(self.Name + " minFreq" + str(self.MinFiringFrequency))
+        if debug: print(self.Name + " gain " + str(self.Gain))
 
         # calculate new FiringFrequency
         if self._nextVoltage < self.ThresholdVoltage:
+            if debug: print(self.Name + " activity 0.0")
             self._nextFiringFrequency = 0.0
         else:
             min_activity = self.MinFiringFrequency - self.Gain * self.ThresholdVoltage
-            if debug: print(self.Name + " minFreq" + str(self.MinFiringFrequency))
-            if debug: print(self.Name + " gain " + str(self.Gain))
             if debug: print(self.Name + " activity " + str(min_activity))
             if self._nextVoltage < ((1.0 - min_activity)/self.Gain):
                 self._nextFiringFrequency = self.Gain * self._nextVoltage + min_activity

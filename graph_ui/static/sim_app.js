@@ -366,7 +366,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var leg = bug.leg; // alias for brevity
         // seems to work best with this fixed,
         // gui framerate is a bit hicuppy
-        var TIMECONSTANT = 1 / 200.0; // seconds per simulated time step -- neuron time constant is 1/1000, would make sense if they were the same
+        var TIMECONSTANT = 1 / 400.0; // seconds per simulated time step -- neuron time constant is 1/1000, would make sense if they were the same
         var DT = TIMECONSTANT;
         var PI = Math.PI;
         var TWOPI = 2.0*PI;
@@ -412,6 +412,10 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var edge_time = bug.antenna_edge_time;
         var antenna_contact = bug.antenna_contact;
         var contact_angle = bug.antenna_contact_angle;
+
+        // clear contact then check for it
+        antenna_contact[0] = antenna_contact[1] = false;
+
         for(var i=0; i<2; i++){
             // check world edge contact
             if(ant_pts[i][0] <= minx){
