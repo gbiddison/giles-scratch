@@ -7,10 +7,10 @@ import random
 class Neuron(PickleToXML):
     __pickle_to_xml__ = ['Name','Incoming','Outgoing','Gating'
         ,'MembraneConductance','MembraneCapacitance','ThresholdVoltage'
-        ,'MinFiringFrequency', 'Gain', 'IntrinsicCurrent', 'LIC', 'HIC']
+        ,'MinFiringFrequency', 'Gain', 'IntrinsicCurrent', 'LIC', 'HIC', 'LowIC', 'HighIC']
     __next_id = 0 # static id for unnamed neurons
 
-    TimeConstant = 1.0 / 1000.0 # Seconds per simulated time step
+    TimeConstant = 1.0 / 200.0 # Seconds per simulated time step
     ICType_VInf = 0
     ICType_Random = 1
     ICType_None = 2
@@ -129,12 +129,15 @@ class Neuron(PickleToXML):
 
     def updateState(self):
         self._stateChanged = False
+        debug = self.Name == 'FOOTL1'
+        if debug: print()
         # calculate current (based on activation of incoming links)
         current = 0.0
         for link in self.Incoming:
+            if debug:  print(self.Name + " link from " + link.Source.Name + " ff " + str(link.Source._firingFrequency) + " w " + str(link.Weight))
             activity = link.Source._firingFrequency * link.Weight # frequency * weight = current ... apparently
             if link.GateSource is not None:
-                #print(self.Name + " gated by " + link.GateSource.Name)
+                if debug: print(self.Name + " gated by " + link.GateSource.Name)
                 gated_activity = link.GateSource._firingFrequency * link.GateWeight
                 if link.GateType == Link.GateType_Gate:
                     activity *= link.GateState + gated_activity * 1e9
@@ -151,35 +154,46 @@ class Neuron(PickleToXML):
                 volts = self._current / self.MembraneConductance
                 if volts > self.LIC[0]: self._maxChangeTimeIC = self.LIC[1] - self.LIC[2] * volts
                 else:                   self._maxChangeTimeIC = float('inf')
-            if (self._voltage < self.ThresholdVoltage and self._nextVoltage >= self.ThresholdVoltage) or (not self._isHighIC and self._lastChangeTimeIC >= self._maxChangeTimeIC):                
+            if (self._voltage < self.ThresholdVoltage and self._nextVoltage >= self.ThresholdVoltage) or (not self._isHighIC and self._lastChangeTimeIC >= self._maxChangeTimeIC):
                 self.set_IsHighIC(True) # turn on intrinsic current                 
             elif self._isHighIC and self._lastChangeTimeIC >= self._maxChangeTimeIC:
                 self.set_IsHighIC(False) # turn off intrinsic current                 
                 
             current += self.LowIC 
-            if self._isHighIC: current += (self.HighIC - self.LowIC)
+            if self._isHighIC:
+                current += (self.HighIC - self.LowIC)
             
         # APPLY SENSORY CURRENT FROM EXTERNAL SOURCE
         current += self._sensory_current  #  getSensorCurrent(np->sensorType, np->name, np->paramsSensorCurrent);
         # self._sensory_current = 0 # clear immediately or hold?
 
-        self._current = current # store calculated current 
-        
+        self._current = current  # store calculated current
+
+        if debug: print(self.Name + " current_1 " + str(current))
+
         # calculate new Voltage
         current = (current - self._voltage * self.MembraneConductance) / self.MembraneCapacitance
         self._nextVoltage = self._voltage + current * Neuron.TimeConstant
         if abs(self._nextVoltage < 1e-30): self._nextVoltage = 0.0 # floor to epsilon instead of overflow
 
+        if debug: print(self.Name + " current_2 " + str(current))
+        if debug: print(self.Name + " nextVolts " + str(self._nextVoltage))
+        if debug: print(self.Name + " threshold " + str(self.ThresholdVoltage))
+
         # calculate new FiringFrequency
         if self._nextVoltage < self.ThresholdVoltage:
             self._nextFiringFrequency = 0.0
         else:
-            activity = self.MinFiringFrequency - self.Gain * self.ThresholdVoltage
-            if self._nextVoltage < (1.0 - activity)/self.Gain:
-                self._nextFiringFrequency = self.Gain * self._nextVoltage + activity
+            min_activity = self.MinFiringFrequency - self.Gain * self.ThresholdVoltage
+            if debug: print(self.Name + " minFreq" + str(self.MinFiringFrequency))
+            if debug: print(self.Name + " gain " + str(self.Gain))
+            if debug: print(self.Name + " activity " + str(min_activity))
+            if self._nextVoltage < ((1.0 - min_activity)/self.Gain):
+                self._nextFiringFrequency = self.Gain * self._nextVoltage + min_activity
             else:
                 self._nextFiringFrequency = 1.0
         
+        if debug: print(self.Name + " frequency " + str(self._nextFiringFrequency))
 
     def changeState(self):
         if self._nextFiringFrequency != self._firingFrequency or self._nextVoltage != self._voltage:

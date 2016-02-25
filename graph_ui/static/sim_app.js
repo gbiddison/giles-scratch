@@ -1,7 +1,7 @@
 /**
  * Created by gbiddison on 7/10/15.
  */
-SCALE = 0.5;
+SCALE = 1.0;
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
@@ -278,7 +278,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'cerb_points': [[0,0], [0,0]], // cerci attachment to body
             'cer_points': [[0,0], [0,0]],  // free tip of cerci
 
-        }
+        };
     	var mouthX = bug_const.hdtl * Math.cos(bug_const.hdtang);
 	    var mouthY = bug_const.hdtl * Math.sin(bug_const.hdtang);
 
@@ -325,7 +325,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 	    $scope.bug = bug;
 	    $scope.bug_const = bug_const;
         $scope.render_state();
-    }
+    };
 
     $scope.update_output = function(node, value) {
         var bug = $scope.bug;
@@ -339,19 +339,22 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                     "FOOTR1", "FOOTR2", "FOOTR3"];
         var mouth = ["FOMC"]; // state --> output is MO though wtf, true > 0.5
 
+        if( node == 'FOOTL2')
+            console.log("update: " + node + " " + value);
         if( node.in_list(mouth)){
             bug.last_mouth = bug.mouth;
             bug.mouth = value > 0.5;
         }else if( node.in_list(foot)){
             var foot_index = node.slice(-2); // eg "L1"
             bug.foot[foot_index] = value > 0;
+            // console.log("updated foot: " + node + " " + foot_index + " " + value + " " + bug.foot[foot_index])
         }else{
             var leg_index = node.slice(-2); // eg "L1"
-            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 10. * value;  // 50 original
+            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 50. * value;  // 50 original
             else if( node.in_list(forward)) bug.leg[leg_index].forward_force = 50. * value;   // 50 original
             else if( node.in_list(lateral)) bug.leg[leg_index].lateral_force = 7. * value;
         }
-    }
+    };
 
     $scope.calculate_state = function() {
         var ctx = document.getElementById("c").getContext("2d");
@@ -363,7 +366,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var leg = bug.leg; // alias for brevity
         // seems to work best with this fixed,
         // gui framerate is a bit hicuppy
-        var TIMECONSTANT = 1 / 25.0; // seconds per simulated time step -- neuron time constant is 1/1000, would make sense if they were the same
+        var TIMECONSTANT = 1 / 200.0; // seconds per simulated time step -- neuron time constant is 1/1000, would make sense if they were the same
         var DT = TIMECONSTANT;
         var PI = Math.PI;
         var TWOPI = 2.0*PI;

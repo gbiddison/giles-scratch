@@ -19,7 +19,7 @@ from tornado import httpclient
 from tornado import gen
 from datetime import datetime
 
-UPDATE_RATE =  1./10 # seconds
+UPDATE_RATE =  1./60 # seconds
 
 UPDATE_KEY = 'update'
 COMMAND_KEY = 'command'
