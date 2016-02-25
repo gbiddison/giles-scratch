@@ -125,8 +125,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var width = $scope.fabric_canvas.getWidth();
         var height = $scope.fabric_canvas.getHeight();
         var size = 0.05 * Math.min(width, height);
-        var x = x_coord * width + size/2.;
-        var y = y_coord * height + size/2.;
+        var x = x_coord * width;
+        var y = y_coord * height;
 
         var node = null, fill = 0;
         if (is_input){
@@ -330,10 +330,12 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         switch (message.command) {
             case 'init response':
                 console.log(message);
-                $scope.init_nodes(message.payload)
+                console.log("init keys: " +  Object.keys(message.payload.nodes).length);
+                $scope.init_nodes(message.payload);
                 break;
 
             case 'update':
+                // console.log("keys: " +  Object.keys(message.payload).length);
                 for (var key in message.payload) {
                     value = message.payload[key];
                     // if key is a neuron, value is neuron firing frequency
@@ -343,10 +345,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                         node = $scope.all_nodes[key].item(0);
                         fill = $scope.all_nodes[key].item(1);
                         fill.set({width: node.getWidth() * value, height: node.getHeight() * value, radius: node.get('radius') * value});
-                    }else
+                    }else {
                         // otherwise interpret the value as a scope key
                         // for updating {{ }} variables
                         $scope[key] = value;
+                    }
                 }
                 break;
 

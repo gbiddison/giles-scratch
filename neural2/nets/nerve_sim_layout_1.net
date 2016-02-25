@@ -1812,7 +1812,7 @@
 												<Gating module="builtins" type="list"/>
 												<MembraneConductance module="builtins" type="float">5e-07</MembraneConductance>
 												<MembraneCapacitance module="builtins" type="float">1e-08</MembraneCapacitance>
-												<ThresholdVoltage module="builtins" type="float">0.002</ThresholdVoltage>
+												<ThresholdVoltage module="builtins" type="float">-0.002</ThresholdVoltage>
 												<MinFiringFrequency module="builtins" type="float">0.0</MinFiringFrequency>
 												<Gain module="builtins" type="float">1000.0</Gain>
 												<IntrinsicCurrent module="builtins" type="int">2</IntrinsicCurrent>
@@ -2031,7 +2031,7 @@
 												<Gating module="builtins" type="list"/>
 												<MembraneConductance module="builtins" type="float">5e-07</MembraneConductance>
 												<MembraneCapacitance module="builtins" type="float">1e-08</MembraneCapacitance>
-												<ThresholdVoltage module="builtins" type="float">0.002</ThresholdVoltage>
+												<ThresholdVoltage module="builtins" type="float">-0.002</ThresholdVoltage>
 												<MinFiringFrequency module="builtins" type="float">0.0</MinFiringFrequency>
 												<Gain module="builtins" type="float">1000.0</Gain>
 												<IntrinsicCurrent module="builtins" type="int">2</IntrinsicCurrent>
@@ -2271,7 +2271,7 @@
 															<Gating module="builtins" type="list"/>
 															<MembraneConductance module="builtins" type="float">5e-07</MembraneConductance>
 															<MembraneCapacitance module="builtins" type="float">1e-08</MembraneCapacitance>
-															<ThresholdVoltage module="builtins" type="float">0.002</ThresholdVoltage>
+															<ThresholdVoltage module="builtins" type="float">-0.002</ThresholdVoltage>
 															<MinFiringFrequency module="builtins" type="float">0.0</MinFiringFrequency>
 															<Gain module="builtins" type="float">1000.0</Gain>
 															<IntrinsicCurrent module="builtins" type="int">2</IntrinsicCurrent>
@@ -2522,7 +2522,7 @@
 																		<Gating module="builtins" type="list"/>
 																		<MembraneConductance module="builtins" type="float">5e-07</MembraneConductance>
 																		<MembraneCapacitance module="builtins" type="float">1e-08</MembraneCapacitance>
-																		<ThresholdVoltage module="builtins" type="float">0.002</ThresholdVoltage>
+																		<ThresholdVoltage module="builtins" type="float">-0.002</ThresholdVoltage>
 																		<MinFiringFrequency module="builtins" type="float">0.0</MinFiringFrequency>
 																		<Gain module="builtins" type="float">1000.0</Gain>
 																		<IntrinsicCurrent module="builtins" type="int">2</IntrinsicCurrent>
@@ -2773,7 +2773,7 @@
 																					<Gating module="builtins" type="list"/>
 																					<MembraneConductance module="builtins" type="float">5e-07</MembraneConductance>
 																					<MembraneCapacitance module="builtins" type="float">1e-08</MembraneCapacitance>
-																					<ThresholdVoltage module="builtins" type="float">0.002</ThresholdVoltage>
+																					<ThresholdVoltage module="builtins" type="float">-0.002</ThresholdVoltage>
 																					<MinFiringFrequency module="builtins" type="float">0.0</MinFiringFrequency>
 																					<Gain module="builtins" type="float">1000.0</Gain>
 																					<IntrinsicCurrent module="builtins" type="int">2</IntrinsicCurrent>
@@ -3013,7 +3013,7 @@
 																								<Gating module="builtins" type="list"/>
 																								<MembraneConductance module="builtins" type="float">5e-07</MembraneConductance>
 																								<MembraneCapacitance module="builtins" type="float">1e-08</MembraneCapacitance>
-																								<ThresholdVoltage module="builtins" type="float">0.002</ThresholdVoltage>
+																								<ThresholdVoltage module="builtins" type="float">-0.002</ThresholdVoltage>
 																								<MinFiringFrequency module="builtins" type="float">0.0</MinFiringFrequency>
 																								<Gain module="builtins" type="float">1000.0</Gain>
 																								<IntrinsicCurrent module="builtins" type="int">2</IntrinsicCurrent>
@@ -3253,7 +3253,7 @@
 																											<Gating module="builtins" type="list"/>
 																											<MembraneConductance module="builtins" type="float">5e-07</MembraneConductance>
 																											<MembraneCapacitance module="builtins" type="float">1e-08</MembraneCapacitance>
-																											<ThresholdVoltage module="builtins" type="float">0.002</ThresholdVoltage>
+																											<ThresholdVoltage module="builtins" type="float">-0.002</ThresholdVoltage>
 																											<MinFiringFrequency module="builtins" type="float">0.0</MinFiringFrequency>
 																											<Gain module="builtins" type="float">1000.0</Gain>
 																											<IntrinsicCurrent module="builtins" type="int">2</IntrinsicCurrent>

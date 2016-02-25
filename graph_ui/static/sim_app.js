@@ -337,10 +337,9 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                         "LER1", "LER2"];
         var foot = ["FOOTL1", "FOOTL2", "FOOTL3", // state, true > 0
                     "FOOTR1", "FOOTR2", "FOOTR3"];
+
         var mouth = ["FOMC"]; // state --> output is MO though wtf, true > 0.5
 
-        if( node == 'FOOTL2')
-            console.log("update: " + node + " " + value);
         if( node.in_list(mouth)){
             bug.last_mouth = bug.mouth;
             bug.mouth = value > 0.5;
@@ -366,7 +365,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var leg = bug.leg; // alias for brevity
         // seems to work best with this fixed,
         // gui framerate is a bit hicuppy
-        var TIMECONSTANT = 1 / 400.0; // seconds per simulated time step -- neuron time constant is 1/1000, would make sense if they were the same
+        var TIMECONSTANT = 1.0 / 60.0; // seconds per simulated time step -- neuron time constant is 1/1000, would make sense if they were the same
         var DT = TIMECONSTANT;
         var PI = Math.PI;
         var TWOPI = 2.0*PI;

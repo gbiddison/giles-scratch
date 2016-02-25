@@ -19,7 +19,7 @@ from tornado import httpclient
 from tornado import gen
 from datetime import datetime
 
-UPDATE_RATE =  1./60 # seconds
+UPDATE_RATE =  1./40 # seconds
 
 UPDATE_KEY = 'update'
 COMMAND_KEY = 'command'
@@ -38,6 +38,7 @@ class WebSocketBridge(object):
         # non-blocking periodic polling in tornado
         self.update_rate = UPDATE_RATE
         self.last_frame = datetime.now()
+        self.last_transmitted_state = {}
 
         # websocket callback for push messages
         self.ws_callback = None
@@ -104,7 +105,9 @@ class WebSocketBridge(object):
         self.net.Net.update()
         payload = {}
         for neuron in self.net.Net.Neurons:
-            payload[neuron.Name] = neuron._firingFrequency
+            activity = neuron.get_activity()
+            if neuron.Name not in self.last_transmitted_state or self.last_transmitted_state[neuron.Name] != activity:
+                payload[neuron.Name] = activity
 
         import random as rnd
         payload['random_value'] = rnd.randint(0, 255)
@@ -121,6 +124,8 @@ class WebSocketBridge(object):
 
         if self.ws_callback is not None:
             self.ws_callback(UPDATE_KEY, payload)
+
+        self.last_transmitted_state = payload
 
         # call ourselves again so that the yield loop completes
         self.device_loop()

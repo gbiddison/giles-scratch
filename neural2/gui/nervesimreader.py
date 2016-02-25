@@ -21,6 +21,7 @@ class NerveSimReader:
                 neuron.MembraneConductance = float(f.readline().split()[1])
                 neuron.MembraneCapacitance = float(f.readline().split()[1])
                 neuron.ThresholdVoltage = float(f.readline().split()[1])
+                neuron._voltage = neuron._nextVoltage = neuron.ThresholdVoltage  # start at threshold
                 neuron.MinFiringFrequency = float(f.readline().split()[1])
                 neuron.Gain = float(f.readline().split()[1])
 
