@@ -1,7 +1,7 @@
 /**
  * Created by gbiddison on 7/10/15.
  */
-SCALE = 0.5;
+SCALE = 1.5;
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
@@ -126,7 +126,20 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         }
         ctx.closePath();
         ctx.stroke();
-    }
+    };
+
+    $scope.fill_poly = function(ctx, points){
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(points[0][0], points[0][1]);
+        for(var i in points){
+            //console.log(points[i]);
+            ctx.lineTo(points[i][0], points[i][1]);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    };
 
     $scope.draw_lines = function(ctx, from_points, to_points){
         ctx.beginPath();
@@ -135,7 +148,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             ctx.lineTo(to_points[i][0], to_points[i][1]);
         }
         ctx.stroke();
-    }
+    };
 
     $scope.transform = function(points, translate_x, translate_y, radians){
         //radians = -(radians + Math.PI/2.0); // to get counter-clockwise rotation, orientated 0.0 = right facing
@@ -171,13 +184,16 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                               leg_points[i][1] + bug_const.legl[i] * Math.sin(bug.legang[i])];
         }
 
-        //draw head
-        $scope.draw_poly(ctx, $scope.transform(bug.head_points, x, y, bug.angle));
-        //if (bug.mouth)
-        //    dc.DrawLine( bugp.head[0],bugp.head[1],bugp.head[4],bugp.head[5]);
 
         // draw body
         $scope.draw_poly(ctx, $scope.transform(bug.body_points, x, y, bug.angle));
+
+        //draw head
+        $scope.fill_poly(ctx, $scope.transform(bug.head_points, x, y, bug.angle));
+        if (bug.mouth)
+            // dc.DrawLine( bugp.head[0],bugp.head[1],bugp.head[4],bugp.head[5]);
+            $scope.draw_lines(ctx, $scope.transform([bug.head_points[0]], x, y, bug.angle),
+                                   $scope.transform([bug.head_points[2]], x, y, bug.angle));
 
         // draw antennae
         $scope.draw_lines(ctx, $scope.transform(bug.antb_points, x, y, bug.angle),
