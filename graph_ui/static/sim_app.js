@@ -5,11 +5,11 @@ SCALE = 1.5;
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
-}
+};
 
 var app = angular.module( 'graph_ui_module', [] );
 
-app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
+app.factory('WebSocketService', ['$q', '$rootScope', '$timeout', function ($q, $rootScope) {
 
     var Service = {};           // we return this object
     var callbacks = {};
@@ -44,7 +44,7 @@ app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
         return currentCallbackId;
     }
 
-    Service.initialize = function(){
+    Service.initialize = function(on_open, on_close){
         var loc = window.location, new_uri;
         new_uri = loc.protocol === "https:" ? new_uri = "wss:" : new_uri = "ws:";
 
@@ -58,17 +58,27 @@ app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
             console.log("Socket has been opened!");
             $rootScope.connection_status = 'Connected';
             Service.command('init', '', '', window.location.origin);
+            if(on_open){
+                on_open();
+            }
         };
 
         ws.onclose = function(){
-            $rootScope.connection_status = 'Disconnected, Click to Connect';
+            $rootScope.connection_status = 'Disconnected, reconnecting...';
             $rootScope.$apply();
             console.log("Socket closed");
+            if(on_close){
+                on_close();
+            }
         };
 
         ws.onmessage = function (message) {
             listener(JSON.parse(message.data));
         };
+
+        ws.onerror = function(message) {
+            console.log("ws-error: " + message);
+        }
     };
 
     Service.command = function(command, payload) {
@@ -102,19 +112,24 @@ app.directive('resize', function ($window) {
         });
         changeSize(); // when page loads
     }
-})
+});
 
 /*
     the root controller
 */
-app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocketService', '$window',
-        function ($scope, $rootScope, $timeout, WebSocketService, $window) {
+app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocketService',
+        function ($scope, $rootScope, $timeout, WebSocketService) {
 
     console.log('Initialized root controller.');
     $rootScope.connection_status = 'Disconnected, Click to Connect';
 
     $scope.reconnect = function(){
-        WebSocketService.initialize();
+        console.log("connecting...");
+        var promise = undefined;
+        WebSocketService.initialize(
+            function(){ if(promise){ $timeout.cancel(promise); promise = undefined;}},
+            function(){ promise = $timeout($scope.reconnect, 100); }
+        );
     };
 
     $scope.draw_poly = function(ctx, points){
@@ -164,7 +179,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             result[i] = [x, y];
         }
         return result;
-    }
+    };
 
     /* for now, sim positions are client side */
     $scope.render_state = function(){
@@ -216,13 +231,13 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 $scope.draw_poly(ctx, pad);
             }
         }
-    }
+    };
 
     $scope.initialize = function(payload){
         $scope.initialize_bug();
         $scope.inputs = payload.inputs;
         $scope.outputs = payload.outputs;
-    }
+    };
 
     $scope.initialize_bug = function(){
         var bug_const = {
@@ -261,7 +276,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'cerbang':  [Math.atan2(-30.0,2), Math.atan2(-30.0,-2)],
             'cercl':    Math.sqrt(34.0*34 + 8*8),
             'cercang':  [Math.atan2(-34.0,8), Math.atan2(-34.0,-8)],
-        }
+        };
 
         var bug = {   // state
             'x': 0.0,
@@ -663,7 +678,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             bug.last_foot[i] = bug.foot[i]; // save foot states
             leg[i].backward_force = leg[i].forward_force = leg[i].lateral_force = 0; // clear forces
         }
-    }
+    };
 
     $scope.send_sensors = function()
     {
@@ -691,7 +706,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         */
         // LCS is an 'input' neuron, but it self stimulating, a beat generator
 
-        var sensors = {}
+        var sensors = {};
         for(var n in $scope.inputs)
         {
             var node = $scope.inputs[n];
@@ -717,7 +732,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                     //console.log("'" + node + "'[" + i + "]: " + value);
                 }
             }else if(node.in_list(AntennaContact)){
-                var antenna_index = node.slice(-1) // eh "L" or "R"
+                var antenna_index = node.slice(-1); // eh "L" or "R"
                 var i = antenna_index == "L" ? 0 : 1;
                 if (!bug.antenna_edge_time[i]){
                     if (bug.antenna_contact[i]){
@@ -730,7 +745,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                     value = 5.09e-009 * bug.last_edge_contact_angle[i];
                 }
             }else if(node.in_list(OdorStrength)){
-                var antenna_index = node.slice(-1) // eh "L" or "R" or "S" for mouth
+                var antenna_index = node.slice(-1); // eh "L" or "R" or "S" for mouth
                 var i = antenna_index == "L" ? 0 : antenna_index == "R" ? 1 : 2;
                 if (i < 2) value = 1e-010 * (i==0? 0.0 : 0.0)/*bug.antenna_odor[j]*/ - 2.5e-012;
                 else       value = 5e-011 * 0.0/*bug.mouth_odor*/ - 5e-011;
@@ -768,7 +783,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         //console.log(sensors);
 
         WebSocketService.command('sensors', sensors);
-    }
+    };
 
     $rootScope.switchBoard = function(message) {
         // console.log(message);
@@ -801,6 +816,5 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         $scope.$apply();
     };
 
-    WebSocketService.initialize();
-
+    $scope.reconnect();
 }]);
