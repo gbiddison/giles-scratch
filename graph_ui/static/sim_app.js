@@ -3,6 +3,10 @@
  */
 SCALE = 1.5;
 START_ANGLE = -Math.PI/2.;
+START_ENERGY = 999.0;
+ENERGYPERSECOND = 10.0;
+ENERGY_PER_POOP = 30.0;
+POOP_SCALE = 0.5;
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
@@ -182,10 +186,41 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         return result;
     };
 
+    $scope.render_food = function(){
+        var ctx = document.getElementById("c").getContext("2d");
+        var foods = $scope.food;
+        var w = ctx.canvas.width/2.;
+        var h = ctx.canvas.height/2.;
+        var lw = ctx.lineWidth;
+        var ss = ctx.strokeStyle;
+        var fs = ctx.fillStyle;
+        ctx.fillStyle = 'salmon';
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#003300';
+
+        for(var i in foods)
+        {
+            var food = foods[i];
+            var radius = SCALE * food.radius;
+            var x = food.x + w;
+            var y = food.y + h;
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0., 2. * Math.PI, false);
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.fillStyle = fs;
+        ctx.lineWidth = lw;
+        ctx.strokeStyle = ss;
+    };
+
     /* for now, sim positions are client side */
     $scope.render_state = function(){
         var ctx = document.getElementById("c").getContext("2d");
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        $scope.render_food();
 
         var bug = $scope.bug;
         var bug_const = $scope.bug_const;
@@ -197,20 +232,17 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var foot_points = bug.foot_points;
 
         for(var i=0; i<6; ++i){
-            var n = bug.leg_index[i];
-            //if(!(bug.foot[n] || bug.last_foot[n]))
-                foot_points[i] = [leg_points[i][0] + bug_const.legl[i] * Math.cos(bug.legang[i]),
-                                  leg_points[i][1] + bug_const.legl[i] * Math.sin(bug.legang[i])];
+            foot_points[i] = [leg_points[i][0] + bug_const.legl[i] * Math.cos(bug.legang[i]),
+                              leg_points[i][1] + bug_const.legl[i] * Math.sin(bug.legang[i])];
         }
 
 
         // draw body
-        $scope.draw_poly(ctx, $scope.transform(bug.body_points, x, y, bug.angle));
+        $scope.fill_poly(ctx, $scope.transform(bug.body_points, x, y, bug.angle));
 
         //draw head
         $scope.fill_poly(ctx, $scope.transform(bug.head_points, x, y, bug.angle));
-        if (bug.mouth)
-            // dc.DrawLine( bugp.head[0],bugp.head[1],bugp.head[4],bugp.head[5]);
+        if (bug.mouth && !bug.dead)
             $scope.draw_lines(ctx, $scope.transform([bug.head_points[0]], x, y, bug.angle),
                                    $scope.transform([bug.head_points[2]], x, y, bug.angle));
 
@@ -226,7 +258,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                                $scope.transform(bug.foot_points, x, y, bug.angle));
         // draw foot down pad
         for(var n in bug.foot){
-            if (bug.foot[n]){
+            if (bug.foot[n] || bug.dead){
                 var i = bug.leg_index.indexOf(n);
                 var fpt = $scope.transform(bug.foot_points, x, y, bug.angle);
                 var w = 2. * SCALE;
@@ -313,6 +345,9 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'ant_points': [[0,0], [0,0]],  // free tip of antenna
             'cerb_points': [[0,0], [0,0]], // cerci attachment to body
             'cer_points': [[0,0], [0,0]],  // free tip of cerci
+            'energy': START_ENERGY,
+            'last_energy': START_ENERGY,   // energy last time bug pooped
+            'dead': false,
         };
     	var mouthX = bug_const.hdtl * Math.cos(bug_const.hdtang);
 	    var mouthY = bug_const.hdtl * Math.sin(bug_const.hdtang);
@@ -359,6 +394,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
 	    $scope.bug = bug;
 	    $scope.bug_const = bug_const;
+        $scope.food = [];
+
         $scope.render_state();
     };
 
@@ -391,6 +428,9 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     };
 
     $scope.calculate_state = function() {
+        if( $scope.bug.dead)
+            return;
+
         var ctx = document.getElementById("c").getContext("2d");
         var maxx = ctx.canvas.width / 2., maxy = ctx.canvas.height / 2.;
         var minx = -maxx, miny = -maxy;
@@ -639,17 +679,20 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                     bug.legang[i] = bug_const.minlegang[i];
             }
         }
-        /*
-        bug.energy -= ENERGYPERSECOND* bug_const.DT; // decrement bug's bug.energy
+
+        bug.energy -= ENERGYPERSECOND * DT; // decrement bug's bug.energy
+        var energy_change = bug.last_energy - bug.energy;
+        if(energy_change >= ENERGY_PER_POOP){
+            bug.last_energy = bug.energy;
+            $scope.food.push({'x': bug.x, 'y': bug.y, 'radius': ENERGY_PER_POOP * POOP_SCALE});
+        }
+
         if (bug.energy <= 0.)
         {
-            bug.energy = 0;
-            //bar(430,336,454,348);
-            //outtextxy(430,336,"RIP");
-            dead = true;
+            bug.energy = START_ENERGY;
+            bug.dead = true;
             return;
         }
-        */
         /*
         bug.odor[0] = bug.odor[1] = bug.mouth_odor = 0.;
         bug.mouthX = bug.x + bug_const.hdtl * cos(bug.angle + bug_const.hdtang);
@@ -771,7 +814,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 if (i < 2) value = 1e-010 * 0.0/*bug.antenna_odor[j]*/ - 2.5e-012;
                 else       value = 5e-011 * 0.0/*bug.mouth_odor*/ - 5e-011;
             }else if(node.in_list(EnergyCapacity)){
-                value = 5e-012 * 0.0;/*bug.energy;*/
+                value = 5e-012 * bug.energy;
             }else if(node.in_list(MouthContact)){
                 if(bug.mouth_contact) value = 5e-009;
                 else                  value = 0;
