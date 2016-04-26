@@ -198,7 +198,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
         for(var i=0; i<6; ++i){
             var n = bug.leg_index[i];
-            if(!(bug.foot[n] || bug.last_foot[n]))
+            //if(!(bug.foot[n] || bug.last_foot[n]))
                 foot_points[i] = [leg_points[i][0] + bug_const.legl[i] * Math.cos(bug.legang[i]),
                                   leg_points[i][1] + bug_const.legl[i] * Math.sin(bug.legang[i])];
         }
