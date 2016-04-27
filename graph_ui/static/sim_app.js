@@ -1,12 +1,13 @@
 /**
  * Created by gbiddison on 7/10/15.
  */
-SCALE = 1.5;
-START_ANGLE = -Math.PI/2.;
+SCALE = 1.0;
+START_ANGLE = -Math.PI/2.0;
 START_ENERGY = 999.0;
+BITE_ENERGY = 25.0;
 ENERGYPERSECOND = 10.0;
-ENERGY_PER_POOP = 30.0;
-POOP_SCALE = 0.5;
+ENERGY_PER_POOP = START_ENERGY / 10.0;
+POOP_SCALE = 4.0;
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
@@ -191,12 +192,12 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var foods = $scope.food;
         var w = ctx.canvas.width/2.;
         var h = ctx.canvas.height/2.;
-        var lw = ctx.lineWidth;
-        var ss = ctx.strokeStyle;
-        var fs = ctx.fillStyle;
-        ctx.fillStyle = 'salmon';
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#003300';
+        //var lw = ctx.lineWidth;
+        //var ss = ctx.strokeStyle;
+        //var fs = ctx.fillStyle;
+        //ctx.fillStyle = 'salmon';
+        //ctx.lineWidth = 2;
+        //ctx.strokeStyle = '#003300';
 
         for(var i in foods)
         {
@@ -205,14 +206,21 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             var x = food.x + w;
             var y = food.y + h;
 
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0., 2. * Math.PI, false);
-            ctx.fill();
-            ctx.stroke();
+            if( radius > 0.) {
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0., 2. * Math.PI, false);
+                ctx.fill();
+                ctx.stroke();
+            } else {
+                var pad_w = 5;
+                var pad = [[x-pad_w, y-pad_w], [x+pad_w, y-pad_w],
+                           [x+pad_w, y+pad_w], [x-pad_w, y+pad_w]];
+                $scope.draw_poly(ctx, pad)
+            }
         }
-        ctx.fillStyle = fs;
-        ctx.lineWidth = lw;
-        ctx.strokeStyle = ss;
+        //ctx.fillStyle = fs;
+        //ctx.lineWidth = lw;
+        //ctx.strokeStyle = ss;
     };
 
     /* for now, sim positions are client side */
@@ -272,7 +280,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     $scope.initialize = function(payload){
         $scope.initialize_bug();
         $scope.inputs = payload.inputs;
-        $scope.outputs = payload.outputs;
+        $scope.outputs = payload.outputs + 'MO';  // mouth open controller is not currently in the output layer... FOMC is for some reason instead
     };
 
     $scope.initialize_bug = function(){
@@ -345,6 +353,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'ant_points': [[0,0], [0,0]],  // free tip of antenna
             'cerb_points': [[0,0], [0,0]], // cerci attachment to body
             'cer_points': [[0,0], [0,0]],  // free tip of cerci
+            'mouth_odor': 0.,
+            'antenna_odor': [0., 0.],
             'energy': START_ENERGY,
             'last_energy': START_ENERGY,   // energy last time bug pooped
             'dead': false,
@@ -410,7 +420,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var foot = ["FOOTL1", "FOOTL2", "FOOTL3", // state, true > 0
                     "FOOTR1", "FOOTR2", "FOOTR3"];
 
-        var mouth = ["FOMC"]; // state --> output is MO though wtf, true > 0.5
+        var mouth = ["MO"]; // state --> true > 0.5 ... hmm MO should be the motor
 
         if( node.in_list(mouth)){
             bug.last_mouth = bug.mouth;
@@ -428,14 +438,17 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     };
 
     $scope.calculate_state = function() {
-        if( $scope.bug.dead)
+        if( $scope.bug.dead) {
+            $scope.initialize_bug();
             return;
+        }
 
         var ctx = document.getElementById("c").getContext("2d");
         var maxx = ctx.canvas.width / 2., maxy = ctx.canvas.height / 2.;
         var minx = -maxx, miny = -maxy;
         var bug_const = $scope.bug_const;
         var bug = $scope.bug;
+        var foods = $scope.food;
         var leg = bug.leg; // alias for brevity
         // seems to work best with this fixed,
         // gui framerate is a bit hicuppy
@@ -684,7 +697,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var energy_change = bug.last_energy - bug.energy;
         if(energy_change >= ENERGY_PER_POOP){
             bug.last_energy = bug.energy;
-            $scope.food.push({'x': bug.x, 'y': bug.y, 'radius': ENERGY_PER_POOP * POOP_SCALE});
+            foods.push({
+                'x': (cer_pts[0][0] + cer_pts[1][0])/2.,
+                'y': (cer_pts[0][1] + cer_pts[1][1])/2.,
+                'size': energy_change,
+                'radius': POOP_SCALE * Math.sqrt(energy_change/Math.PI)});
         }
 
         if (bug.energy <= 0.)
@@ -693,49 +710,59 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             bug.dead = true;
             return;
         }
-        /*
-        bug.odor[0] = bug.odor[1] = bug.mouth_odor = 0.;
-        bug.mouthX = bug.x + bug_const.hdtl * cos(bug.angle + bug_const.hdtang);
-        bug.mouthY = bug.y + bug_const.hdtl * sin(bug.angle + bug_const.hdtang);
-        cf = 0;
-        mo = 0.;
-        for(int i=0; i<environment->nfood; ++i)
-        { // calculate odors for each bug.antenna & mouth
-            for(int j=0; j<2; ++j)
-            {
-                d = bug.antennaX[j] - environment->foodx[i];
-                f = bug.antennaY[j] - environment->foody[i];
-                bug.odor[j] += .75 * environment->foodsize[i]/(d*d + f*f); // (adjustable!)
-            }
-            d = bug.mouthX - environment->foodx[i];
-            f = bug.mouthY - environment->foody[i];
-            d = d*d + f*f;
-            bug.mouth_odor += environment->foodsize[i]/d;
-            mouthd[i] = sqrt(d);
-            if (bug.mouth_odor > mo)
-            { // save largest bug.mouth_odor
-                mo = bug.mouth_odor;
-                cf = i;
-            }
-        }
-        */
-        /*
-        if (bug.last_mouth && !bug.mouth)  // mouth was open, now closed
+
+        // calculate food odors for each bug.antenna & mouth
+        bug.antenna_odor[0] = bug.antenna_odor[1] = bug.mouth_odor = 0.;
+        var mouthd = 0.;
+        var closest_food = -1;
+        var largest_mouth_odor = 0.;
+        var mth_pts = $scope.transform([bug.head_points[0]], bugx, bugy, bug.angle);
+
+        for(var i in foods)
         {
-            bug.energy += BITEENERGY;
-            environment->foodsize[cf] -= BITEENERGY;
-            environment->foodsize[cf] = max(environment->foodsize[cf], 0);
-            environment->foodr[cf] = sqrt(environment->foodsize[cf]/PI);
+            var food = foods[i];
+            var dx = mth_pts[0][0] - food.x;
+            var dy = mth_pts[0][1] - food.y;
+            var d = dx*dx + dy*dy;
+            var odor = POOP_SCALE * food.size/d
+            if( d != 0.0)
+                bug.mouth_odor += odor;
+            // save largest bug.mouth_odor, to pick which food source we actually contact
+            if (odor > largest_mouth_odor)
+            {
+                largest_mouth_odor = odor;
+                closest_food = i;
+                mouthd = Math.sqrt(d);
+            }
+            // also do antenna odors
+            for(var j=0; j<2; ++j)
+            {
+                dx = ant_pts[j][0] - food.x;
+                dy = ant_pts[j][1] - food.y;
+                d = dx*dx + dy*dy;
+                if( d != 0.0)
+                    bug.antenna_odor[j] += 0.75 * POOP_SCALE * food.size/d; // (adjustable!)
+            }
         }
+
         // check for mouth contact
         bug.mouth_contact = false;
-        for(int i=0; i<environment->nfood; ++i)
-        {
-            if (mouthd[i] > 2*environment->foodr[i])   // change from original
-                continue;
+        if(closest_food >= 0 && mouthd <= 2*foods[closest_food].radius)
             bug.mouth_contact = true;
-            break;
-        }*/
+
+        if (bug.mouth_contact && bug.last_mouth && !bug.mouth)  // mouth was open, now closed
+        {
+            var bite_energy = Math.min(foods[closest_food].size, BITE_ENERGY);
+            bug.energy += bite_energy;
+            foods[closest_food].size -= bite_energy;
+            foods[closest_food].radius = POOP_SCALE * Math.sqrt(foods[closest_food].size/Math.PI);
+            if(foods[closest_food].size <= 0)
+            {
+                foods.splice(closest_food, 1); // discard empty food blocks entirely so that they don't slow down sim
+            }
+        }
+
+        //console.log('mc: ' + bug.mouth_contact + ' md: ' + mouthd);
 
         for(var i in leg)
         {
@@ -811,8 +838,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             }else if(node.in_list(OdorStrength)){
                 var antenna_index = node.slice(-1); // eh "L" or "R" or "S" for mouth
                 var i = antenna_index == "L" ? 0 : antenna_index == "R" ? 1 : 2;
-                if (i < 2) value = 1e-010 * 0.0/*bug.antenna_odor[j]*/ - 2.5e-012;
-                else       value = 5e-011 * 0.0/*bug.mouth_odor*/ - 5e-011;
+                if (i < 2) value = 1e-010 * bug.antenna_odor[i] - 2.5e-012;
+                else       value = 5e-011 * bug.mouth_odor - 5e-011;
             }else if(node.in_list(EnergyCapacity)){
                 value = 5e-012 * bug.energy;
             }else if(node.in_list(MouthContact)){

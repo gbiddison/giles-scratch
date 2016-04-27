@@ -14,7 +14,6 @@ import tornado.web
 import tornado.websocket
 import tornado.autoreload
 from tornado.ioloop import IOLoop
-from tornado import httpclient
 
 from tornado import gen
 from datetime import datetime
