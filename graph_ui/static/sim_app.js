@@ -1,13 +1,13 @@
 /**
  * Created by gbiddison on 7/10/15.
  */
-SCALE = 1.0;
+SCALE = 1.5;
 START_ANGLE = -Math.PI/2.0;
 START_ENERGY = 999.0;
 BITE_ENERGY = 25.0;
 ENERGYPERSECOND = 10.0;
 ENERGY_PER_POOP = START_ENERGY / 10.0;
-POOP_SCALE = 4.0;
+POOP_SCALE = 3.0;
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
@@ -180,8 +180,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             var x = x0;
             var y = y0;
 
-            x = SCALE * (x0 * Math.cos(radians) - y0 * Math.sin(radians)) + translate_x;
-            y = SCALE * (x0 * Math.sin(radians) + y0 * Math.cos(radians)) + translate_y;
+            x = $scope.bug_scale * SCALE * (x0 * Math.cos(radians) - y0 * Math.sin(radians)) + translate_x;
+            y = $scope.bug_scale * SCALE * (x0 * Math.sin(radians) + y0 * Math.cos(radians)) + translate_y;
             result[i] = [x, y];
         }
         return result;
@@ -223,12 +223,37 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         //ctx.strokeStyle = ss;
     };
 
+    $scope.set_bug_scale = function(){
+        function translate(value, leftMin, leftMax, rightMin, rightMax) {
+            // Figure out how 'wide' each range is
+            var leftSpan = leftMax - leftMin;
+            var rightSpan = rightMax - rightMin;
+
+            // Convert the left range into a 0-1 range (float)
+            var valueScaled = (value - leftMin) / leftSpan;
+
+            // Convert the 0-1 range into a value in the right range.
+            return rightMin + (valueScaled * rightSpan);
+        }
+
+        var min_scale = 0.2;
+        var max_scale = 1.0;
+        var max_age = 1000. * 60 * 10; // milliseconds
+        var age = Math.min(Date.now() - $scope.bug.start, max_age);
+        return translate(age, 0., max_age, min_scale, max_scale);
+    };
+
     /* for now, sim positions are client side */
     $scope.render_state = function(){
         var ctx = document.getElementById("c").getContext("2d");
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+        $scope.bug_scale = 1.0;
+
         $scope.render_food();
+
+        $scope.bug_scale = $scope.set_bug_scale();
+        console.log('bug scale:' + $scope.bug_scale);
 
         var bug = $scope.bug;
         var bug_const = $scope.bug_const;
@@ -269,7 +294,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             if (bug.foot[n] || bug.dead){
                 var i = bug.leg_index.indexOf(n);
                 var fpt = $scope.transform(bug.foot_points, x, y, bug.angle);
-                var w = 2. * SCALE;
+                var w = 2. * SCALE * $scope.bug_scale;
                 var pad = [[fpt[i][0]-w, fpt[i][1]-w], [fpt[i][0]+w, fpt[i][1]-w],
                            [fpt[i][0]+w, fpt[i][1]+w], [fpt[i][0]-w, fpt[i][1]+w]];
                 $scope.draw_poly(ctx, pad);
@@ -281,6 +306,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         $scope.initialize_bug();
         $scope.inputs = payload.inputs;
         $scope.outputs = payload.outputs + 'MO';  // mouth open controller is not currently in the output layer... FOMC is for some reason instead
+        $scope.bug_scale = 1.0;
     };
 
     $scope.initialize_bug = function(){
@@ -358,6 +384,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             'energy': START_ENERGY,
             'last_energy': START_ENERGY,   // energy last time bug pooped
             'dead': false,
+            'start': Date.now(),
         };
     	var mouthX = bug_const.hdtl * Math.cos(bug_const.hdtang);
 	    var mouthY = bug_const.hdtl * Math.sin(bug_const.hdtang);
@@ -431,9 +458,9 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             // console.log("updated foot: " + node + " " + foot_index + " " + value + " " + bug.foot[foot_index])
         }else{
             var leg_index = node.slice(-2); // eg "L1"
-            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 50. * value * SCALE;  // 50 original
-            else if( node.in_list(forward)) bug.leg[leg_index].forward_force = 50. * value * SCALE;   // 50 original
-            else if( node.in_list(lateral)) bug.leg[leg_index].lateral_force = 7. * value * SCALE;
+            if( node.in_list(backward))     bug.leg[leg_index].backward_force = 50. * value;  // 50 original
+            else if( node.in_list(forward)) bug.leg[leg_index].forward_force = 50. * value;   // 50 original
+            else if( node.in_list(lateral)) bug.leg[leg_index].lateral_force = 7. * value;
         }
     };
 
@@ -471,19 +498,19 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var f = bug.foot['L1'] * leg['L1'].lateral_force - bug.foot['R1'] * leg['R1'].lateral_force;
         f = f/6.; // (adjustable!) (5 to 6)  original f/6
 
-        var bugx = bug.x - Math.sin(bug.angle) * d * DT;
-        var bugy = bug.y + Math.cos(bug.angle) * d * DT;
+        var bugx = bug.x - Math.sin(bug.angle) * d * DT * SCALE * $scope.bug_scale;
+        var bugy = bug.y + Math.cos(bug.angle) * d * DT * SCALE * $scope.bug_scale;
 
         // calc sideways force du
         var s = bug.foot['L2'] * leg['L2'].lateral_force - bug.foot['R2'] * leg['R2'].lateral_force;
         s = 2. * s;  // (adjustable!) (20 to 2)
 
-        bugx -= Math.cos(bug.angle) * s * DT;
-        bugy -= Math.sin(bug.angle) * s * DT;
+        bugx -= Math.cos(bug.angle) * s * DT * SCALE * $scope.bug_scale;
+        bugy -= Math.sin(bug.angle) * s * DT * SCALE * $scope.bug_scale;
 
         bug.old_angle = bug.angle;
 
-        bug.angle += f * DT;
+        bug.angle += f * DT * SCALE * $scope.bug_scale;
         if (bug.angle < 0)                 // trig!!!
             bug.angle = TWOPI + bug.angle;
         if (bug.angle >= TWOPI)
@@ -631,8 +658,8 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         if (xinc || yinc){
             // if it bounced (it didn't if touch was on both sides)
             // calculate bug position from old position + bounce, ignore forces
-            bug.x += 20.5 * Math.sign(xinc) * DT;  // (adjustable!) bounce
-            bug.y += 20.5 * Math.sign(yinc) * DT;
+            bug.x += 20.5 * Math.sign(xinc) * DT * SCALE * $scope.bug_scale;  // (adjustable!) bounce
+            bug.y += 20.5 * Math.sign(yinc) * DT * SCALE * $scope.bug_scale;
         }else{
             // or use the force-determined position if it didn't bounce
             bug.x = bugx;
@@ -693,9 +720,9 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             }
         }
 
-        bug.energy -= ENERGYPERSECOND * DT; // decrement bug's bug.energy
+        bug.energy -= ENERGYPERSECOND * DT * $scope.bug_scale; // decrement bug's bug.energy
         var energy_change = bug.last_energy - bug.energy;
-        if(energy_change >= ENERGY_PER_POOP){
+        if(energy_change >= ENERGY_PER_POOP * $scope.bug_scale){
             bug.last_energy = bug.energy;
             foods.push({
                 'x': (cer_pts[0][0] + cer_pts[1][0])/2.,
