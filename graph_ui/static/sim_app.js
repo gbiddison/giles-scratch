@@ -187,17 +187,12 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         return result;
     };
 
+
     $scope.render_food = function(){
         var ctx = document.getElementById("c").getContext("2d");
         var foods = $scope.food;
         var w = ctx.canvas.width/2.;
         var h = ctx.canvas.height/2.;
-        //var lw = ctx.lineWidth;
-        //var ss = ctx.strokeStyle;
-        //var fs = ctx.fillStyle;
-        //ctx.fillStyle = 'salmon';
-        //ctx.lineWidth = 2;
-        //ctx.strokeStyle = '#003300';
 
         for(var i in foods)
         {
@@ -205,6 +200,14 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             var radius = SCALE * food.radius;
             var x = food.x + w;
             var y = food.y + h;
+
+
+            //var lw = ctx.lineWidth;
+            var ss = ctx.strokeStyle;
+            //var fs = ctx.fillStyle;
+            if(!food.visible) {
+                ctx.strokeStyle = '#CCCCCC';
+            }
 
             if( radius > 0.) {
                 ctx.beginPath();
@@ -217,10 +220,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                            [x+pad_w, y+pad_w], [x-pad_w, y+pad_w]];
                 $scope.draw_poly(ctx, pad)
             }
+
+            //ctx.fillStyle = fs;
+            //ctx.lineWidth = lw;
+            ctx.strokeStyle = ss;
         }
-        //ctx.fillStyle = fs;
-        //ctx.lineWidth = lw;
-        //ctx.strokeStyle = ss;
     };
 
     $scope.set_bug_scale = function(){
@@ -253,7 +257,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         $scope.render_food();
 
         $scope.bug_scale = $scope.set_bug_scale();
-        console.log('bug scale:' + $scope.bug_scale);
+        // console.log('bug scale:' + $scope.bug_scale);
 
         var bug = $scope.bug;
         var bug_const = $scope.bug_const;
@@ -720,7 +724,10 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             }
         }
 
-        bug.energy -= ENERGYPERSECOND * DT * $scope.bug_scale; // decrement bug's bug.energy
+        // decrement bug's bug.energy
+        bug.energy -= ENERGYPERSECOND * DT * $scope.bug_scale;
+
+        // make a food patch behind the bug if it has lost enough energy
         var energy_change = bug.last_energy - bug.energy;
         if(energy_change >= ENERGY_PER_POOP * $scope.bug_scale){
             bug.last_energy = bug.energy;
@@ -728,7 +735,10 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 'x': (cer_pts[0][0] + cer_pts[1][0])/2.,
                 'y': (cer_pts[0][1] + cer_pts[1][1])/2.,
                 'size': energy_change,
-                'radius': POOP_SCALE * Math.sqrt(energy_change/Math.PI)});
+                'radius': POOP_SCALE * Math.sqrt(energy_change/Math.PI),
+                'visible': true
+            });
+
         }
 
         if (bug.energy <= 0.)
@@ -761,14 +771,28 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 closest_food = i;
                 mouthd = Math.sqrt(d);
             }
+
             // also do antenna odors
+            // if the patch is too close to the wall, ignore it
+            var length = bug_const.antl * $scope.bug_scale * SCALE;
+            var radius = food.radius * SCALE;
+            if( 2*radius < length){
+                // patch is small enough that it might be too close to wall
+                if( (food.x + length - radius > maxx || food.x - length + radius < minx)
+                ||  (food.y + length - radius > maxy || food.y - length + radius < miny)) {
+                    //console.log(i + '(' + food.x + ',' + food.y + ')' + ' (' + maxx + ',' + minx + ',' + maxy + ',' + miny + ') d:' + radius + ' l:' + length);
+                    food.visible = false;
+                    continue;
+                }
+            }
             for(var j=0; j<2; ++j)
             {
                 dx = ant_pts[j][0] - food.x;
                 dy = ant_pts[j][1] - food.y;
                 d = dx*dx + dy*dy;
-                if( d != 0.0)
-                    bug.antenna_odor[j] += 0.75 * POOP_SCALE * food.size/d; // (adjustable!)
+                if( d != 0.0) {
+                    bug.antenna_odor[j] += /*0.75*/ 2.0 * POOP_SCALE * food.size / d; // (adjustable!)
+                }
             }
         }
 
