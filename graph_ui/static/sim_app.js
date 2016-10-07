@@ -7,10 +7,13 @@ START_ENERGY = 999.0;
 BITE_ENERGY = 25.0;
 ENERGYPERSECOND = 10.0;
 ENERGY_PER_POOP = START_ENERGY / 10.0;
-POOP_SCALE = 3.0;
+POOP_SCALE = 4.0;
+_DEBUG_ = false;
 
 String.prototype.in_list=function(list){
-   return ( list.indexOf(this.toString()) != -1)
+    if(list == undefined)
+        return false;
+   return list.indexOf(this.toString()) != -1
 };
 
 var app = angular.module( 'graph_ui_module', [] );
@@ -469,7 +472,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     };
 
     $scope.calculate_state = function() {
-        if( $scope.bug.dead) {
+        if( $scope.bug == undefined || $scope.bug.dead) {
             $scope.initialize_bug();
             return;
         }
@@ -905,6 +908,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         WebSocketService.command('sensors', sensors);
     };
 
+    var avg = 0.0;
     $rootScope.switchBoard = function(message) {
         // console.log(message);
 
@@ -915,13 +919,21 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 break;
 
             case 'update':
+                var output_count = 0;
+                var value_count = 0;
                 for (var key in message.payload) {
-                    value = message.payload[key];
-                    if(key.in_list($scope.outputs))
+                    var value = message.payload[key];
+                    if(key.in_list($scope.outputs)) {
                         $scope.update_output(key, value)
-                    else
+                        ++output_count;
+                    }else{
                         $scope[key] = value; // for updating {{ }} variables, but we should do this more intelligently
+                        ++value_count;}
                 }
+                var sum = output_count + value_count;
+                avg = 0.95 * avg + 0.05 * sum;
+                if (_DEBUG_)
+                    console.log('got ' + output_count + ' outs + ' + value_count + ' vals = ' + sum + ' (' + Math.round(avg * 100)/100 + ' avg)');
                 //$scope.bug.angle += 0.1; // demo spin the bug!
                 $scope.calculate_state();
                 $scope.render_state();

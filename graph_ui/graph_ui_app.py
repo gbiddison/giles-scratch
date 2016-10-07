@@ -100,20 +100,23 @@ class WebSocketBridge(object):
         # the code continues on the next line
         yield gen.Task(IOLoop.instance().add_timeout, time.time() + self.update_rate)
 
-        # the update the network
+        # update the network
         self.net.Net.update()
         payload = {}
         for neuron in self.net.Net.Neurons:
             activity = neuron.get_activity()
             if neuron.Name not in self.last_transmitted_state or self.last_transmitted_state[neuron.Name] != activity:
                 payload[neuron.Name] = activity
+            # payload[neuron.Name] = activity
 
         import random as rnd
-        payload['random_value'] = rnd.randint(0, 255)
+        payload['random_value'] = rnd.randint(0, 65535)
 
         frame = datetime.now()
-        payload['time_delta'] = delta = (frame - self.last_frame).total_seconds()
+        delta = (frame - self.last_frame).total_seconds()
         self.last_frame = frame
+
+        payload['time_delta'] = delta
 
         # p loop
         desired_rate = UPDATE_RATE
@@ -235,12 +238,15 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             [con.write_message(return_msg) for con in self.connections]
 
 
+if __name__ == '__main__':
+    _port = 8888
+    _host = '0.0.0.0'
 
-app = Application()
-app.listen(8888, address='0.0.0.0')
-app.wsbridge = WebSocketBridge()
+    app = Application()
+    app.listen(_port, address=_host)
+    app.wsbridge = WebSocketBridge()
 
-io_loop = tornado.ioloop.IOLoop.instance()
-io_loop.add_callback(app.wsbridge.device_loop)
-io_loop.start()
+    io_loop = tornado.ioloop.IOLoop.instance()
+    io_loop.add_callback(app.wsbridge.device_loop)
+    io_loop.start()
 

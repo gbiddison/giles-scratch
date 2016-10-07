@@ -96,6 +96,7 @@ app.directive('resize', function ($window) {
             $scope.fabric_canvas.setHeight(angular.element($window).height() - 300)
 
             $scope.rescale_nodes();
+            $scope.buffer = undefined; // trigger resize
             $scope.render_edges();
         };
         w.bind('resize', function () {
@@ -103,7 +104,7 @@ app.directive('resize', function ($window) {
         });
         changeSize(); // when page loads
     }
-})
+});
 
 /*
     the root controller
@@ -113,6 +114,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
     console.log('Initialized root controller.');
     $rootScope.connection_status = 'Disconnected, Click to Connect';
+    $scope.last_move_time = new Date();
 
     /*
         add a node item to the fabric canvas; a node has coordinates and a label
@@ -227,17 +229,24 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
     $scope.render_edges = function() {
         // get a buffer where we can draw directly to the canvas on the background layer
-        buffer = $scope.buffer = document.createElement('canvas');
-        buffer.width = $scope.fabric_canvas.getWidth();
-        buffer.height = $scope.fabric_canvas.getHeight();
+        if($scope.buffer == undefined){
+            $scope.buffer = document.createElement('canvas');
+            $scope.buffer.width = $scope.fabric_canvas.getWidth();
+            $scope.buffer.height = $scope.fabric_canvas.getHeight();
+            var img = new fabric.Image( $scope.buffer, { left:0, top:0, angle:0});
+            $scope.fabric_canvas.setBackgroundImage(img)
+        }
+        var buffer = $scope.buffer;
+        var ctx = buffer.getContext('2d');
 
-        ctx = $scope.buffer.getContext('2d');
+        ctx.clearRect(0, 0, buffer.width, buffer.height);
+
         var unselected = 'rgba(0, 0, 255, 0.10)';
         var outgoing = 'rgba(0, 255, 47, 0.90)';
         var incoming = 'rgba(255, 105, 180, 0.90)';
 
         for( var i in $scope.all_edges){
-            edge = $scope.all_edges[i];
+            var edge = $scope.all_edges[i];
 
             var start = $scope.all_nodes[edge[0]];
             var end = $scope.all_nodes[edge[1]];
@@ -250,17 +259,17 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             var y2 = end.getTop() + end_h / 2;
 
             var cur = $scope.current_selection;
-            ctx.beginPath();
             ctx.strokeStyle = (cur == edge[0]) ? outgoing : (cur == edge[1]) ? incoming : unselected;
 
+            ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.stroke();
         }
 
-        var img = new fabric.Image( buffer, { left:0, top:0, angle:0});
-        $scope.fabric_canvas.setBackgroundImage(img)
-    }
+        //var img = new fabric.Image( buffer, { left:0, top:0, angle:0});
+        //$scope.fabric_canvas.setBackgroundImage(img)
+    };
 
     $scope.create_viz = function () {
 
@@ -288,8 +297,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 obj.top = Math.min(obj.top, obj.canvas.height-obj.getBoundingRect().height+obj.top-obj.getBoundingRect().top);
                 obj.left = Math.min(obj.left, obj.canvas.width-obj.getBoundingRect().width+obj.left-obj.getBoundingRect().left);
             }
-
-            $scope.render_edges();
+            var now = new Date();
+            if(now - $scope.last_move_time > 1.0) {
+                $scope.render_edges();
+                $scope.last_move_time = now;
+            }
         });
 
         $scope.fabric_canvas.selection = false; // no group selection
@@ -337,13 +349,12 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             case 'update':
                 // console.log("keys: " +  Object.keys(message.payload).length);
                 for (var key in message.payload) {
-                    value = message.payload[key];
+                    var value = message.payload[key];
                     // if key is a neuron, value is neuron firing frequency
                     // render firing frequency as % fill
                     if( key in $scope.all_nodes){
-                        value = message.payload[key];
-                        node = $scope.all_nodes[key].item(0);
-                        fill = $scope.all_nodes[key].item(1);
+                        var node = $scope.all_nodes[key].item(0);
+                        var fill = $scope.all_nodes[key].item(1);
                         fill.set({width: node.getWidth() * value, height: node.getHeight() * value, radius: node.get('radius') * value});
                     }else {
                         // otherwise interpret the value as a scope key
