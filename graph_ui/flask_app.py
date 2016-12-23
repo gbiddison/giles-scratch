@@ -50,7 +50,7 @@ class NetworkState(object):
     Class to manage module connections and logging
 
     """
-    UPDATE_RATE = 1./40  # seconds
+    UPDATE_RATE = 1./30  # seconds
 
     def __init__(self):
         # non-blocking periodic polling in tornado
@@ -110,14 +110,10 @@ class NetworkState(object):
                 neuron._sensory_current = payload[neuron.Name]
 
     def device_loop(self):
-
-        print('entering device loop ....')
-
         # yield here skips the first update and calls us again after the update period expires
         # the code continues on the next line
         socketio.sleep(self.update_rate)
         if not self.connected:
-            print('waiting...')
             socketio.start_background_task(target=self.device_loop)
             return
 
@@ -141,7 +137,7 @@ class NetworkState(object):
 
         # p loop
         desired_rate = self.UPDATE_RATE
-        kp = 0.001
+        kp = 0.003
         error = desired_rate - delta
         self.update_rate += kp * error
 
