@@ -4,9 +4,14 @@
 
 String.prototype.in_list=function(list){
    return ( list.indexOf(this.toString()) != -1)
-}
+};
 
 var app = angular.module( 'graph_ui_module', [] );
+app.config(['$interpolateProvider', function($interpolateProvider){
+    $interpolateProvider.startSymbol('[[');
+    $interpolateProvider.endSymbol(']]');
+}]);
+
 
 app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
 
@@ -44,11 +49,10 @@ app.factory('WebSocketService', ['$q', '$rootScope', function ($q, $rootScope) {
     }
 
     Service.initialize = function(){
-        var loc = window.location, new_uri;
-        new_uri = loc.protocol === "https:" ? new_uri = "wss:" : new_uri = "ws:";
+        var loc = window.location;
+        var new_uri = loc.protocol === "https:" ? "wss:" : "ws:";
+        new_uri += "//" + loc.host + loc.pathname + "ws";
 
-        new_uri += "//" + loc.host;
-        new_uri += loc.pathname + "ws";
         console.log(new_uri);
 
         ws = new WebSocket(new_uri);
@@ -198,7 +202,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
 
         $scope.fabric_canvas.add(group);
         $scope.all_nodes[label] = group;
-    }
+    };
 
     /*
         rescale all the nodes to a new canvas size
@@ -221,11 +225,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             group.setCoords(); // reset location of hit box
         }
         $scope.fabric_canvas.renderAll();
-    }
+    };
 
     $scope.add_edge = function(edge) {
         $scope.all_edges.push(edge);
-    }
+    };
 
     $scope.render_edges = function() {
         // get a buffer where we can draw directly to the canvas on the background layer
@@ -333,11 +337,11 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 node.in_list(payload.outputs));
         }
         $scope.render_edges()
-    }
+    };
 
     $rootScope.switchBoard = function(message) {
 
-        // console.log(message);
+        console.log(message);
 
         switch (message.command) {
             case 'init response':

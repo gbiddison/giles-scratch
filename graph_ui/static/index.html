@@ -18,15 +18,13 @@
     <script src="static/web_app.js"></script>
 </head>
 <style>
-        #c {
-            width: 100%;
-            border: 1px solid #000;;
-            overflow: hidden;
-        }
-
+    #c {
+        width: 100%;
+        border: 1px solid #000;;
+        overflow: hidden;
+    }
 </style>
 <body>
-
  <div ng-controller="rootController" class="container" ng-cloak resize>
 
       <div class="page-header">
@@ -37,8 +35,8 @@
       <div class="row"  ng-click="reconnect()">
         <div class="col-md-12">
             <b>Connection status</b>
-            <p ng-if="connection_status=='Connected'">{{connection_status}}, frame rate: {{1.0/time_delta | number}}/s</p>
-            <p ng-if="connection_status!='Connected'">{{connection_status}}</p>
+            <p ng-if="connection_status=='Connected'">[[connection_status]], frame rate: [[1.0/time_delta | number]]/s</p>
+            <p ng-if="connection_status!='Connected'">[[connection_status]]</p>
         </div>
       </div>
 
@@ -47,10 +45,9 @@
             <canvas id="c"></canvas>
          </div>
          <div class="col-md-12" ng-if="current_selection != ''">
-             {{current_selection}}
+             [[current_selection]]
          </div>
      </div>
  </div> <!-- /container -->
-
 </body>
 </html>
