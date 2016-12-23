@@ -1,0 +1,31 @@
+{
+  "name": "angular-fabric",
+  "version": "1.0.0",
+  "homepage": "https://github.com/maksympetrenko/angular-fabric",
+  "description": "Angular.js module wrapper for Fabric.js",
+  "main": [
+    "./assets/fabric.js",
+    "./assets/fabricCanvas.js",
+    "./assets/fabricConstants.js",
+    "./assets/fabricDirective.js",
+    "./assets/fabricDirtyStatus.js",
+    "./assets/fabricUtilities.js",
+    "./assets/fabricWindow.js"
+  ],
+  "keywords": [
+    "Angular.js",
+    "Fabric.js"
+  ],
+  "dependencies": {
+    "fabric": "~1.4.13"
+  },
+  "_release": "1.0.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.0.0",
+    "commit": "b2efa4a0acc15801c4e4df1184f4e46cc87b02f1"
+  },
+  "_source": "https://github.com/maksympetrenko/angular-fabric.git",
+  "_target": "~1.0.0",
+  "_originalSource": "angular-fabric"
+}

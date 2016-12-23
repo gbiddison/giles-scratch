@@ -1,0 +1,14 @@
+{
+  "name": "angular-fabric",
+  "version": "1.0.0",
+  "homepage": "https://github.com/maksympetrenko/angular-fabric",
+  "description": "Angular.js module wrapper for Fabric.js",
+  "main": [ "./assets/fabric.js", "./assets/fabricCanvas.js", "./assets/fabricConstants.js", "./assets/fabricDirective.js", "./assets/fabricDirtyStatus.js", "./assets/fabricUtilities.js", "./assets/fabricWindow.js" ],
+  "keywords": [
+    "Angular.js",
+    "Fabric.js"
+  ],
+  "dependencies": {
+    "fabric": "~1.4.13"
+  }
+}
