@@ -7,6 +7,7 @@ from bullshit import bullshit
 
 KEYWORDS=['bs', 'BS', 'bullshit', 'no way', 'nonsense', 'bull', 'BULL', 'BULLSHIT']
 
+BOT_QUIET_PERIOD = 300
 
 BOT_NAME = 'syn-bs-bot'
 BOT_ID = os.environ.get("SLACK_BOT_BS_ID")
@@ -34,11 +35,12 @@ if __name__ == "__main__":
     if slack_client.rtm_connect():
         print("Bot connected and running")
         print(AT_BOT)
-        last_message_time = 0.0
+        last_message_time = time.time()
         while True:
             command, channel = parse_slack_output(slack_client.rtm_read())
-            if command and channel:
+            if command and channel and time.time() - last_message_time > BOT_QUIET_PERIOD:
                 handle_command(command, channel)
+                last_message_time = time.time()
             time.sleep(1.0)
     else:
         print("Connection failed")

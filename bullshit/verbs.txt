@@ -1,4 +1,4 @@
-ggregate
+aggregate
 architect
 benchmark
 brand
