@@ -17,86 +17,58 @@ String.prototype.in_list=function(list){
 };
 
 var app = angular.module( 'graph_ui_module', [] );
+app.config(['$interpolateProvider', function($interpolateProvider){
+    $interpolateProvider.startSymbol('[[');
+    $interpolateProvider.endSymbol(']]');
+}]);
 
-app.factory('WebSocketService', ['$q', '$rootScope', '$timeout', function ($q, $rootScope) {
+app.factory('WebSocketService', ['$q', '$rootScope',  function ($q, $rootScope) {
 
     var Service = {};           // we return this object
-    var callbacks = {};
-    var currentCallbackId = 0;
-    var ws = undefined;
-
-    function sendRequest(request) {
-        var defer = $q.defer();
-        var callbackId = getCallbackId();
-        callbacks[callbackId] = {
-            time: new Date(),
-            cb: defer
-        };
-        request.callback_id = callbackId;
-        ws.send(JSON.stringify(request));
-        return defer.promise;
-    }
+    var socket = undefined;
 
     function listener(messageObj) {
-        // if this has a specific callback assigned, send to the promise
-        if (callbacks.hasOwnProperty(messageObj.callback_id)){
-            $rootScope.$apply(callbacks[messageObj.callback_id].cb.resolve(messageObj.result));
-            delete callbacks[messageObj.callbackID];
-        }
-        else
-            // else, send to rootscope's switchboard
-            $rootScope.switchBoard(messageObj);
-    }
-
-    function getCallbackId() {
-        currentCallbackId  = (currentCallbackId + 1) % 10000;
-        return currentCallbackId;
+        $rootScope.switchBoard(messageObj);
     }
 
     Service.initialize = function(on_open, on_close){
-        var loc = window.location, new_uri;
-        new_uri = loc.protocol === "https:" ? new_uri = "wss:" : new_uri = "ws:";
+        var loc = window.location;
+        var new_uri = loc.protocol + "//" + loc.host + loc.pathname;
 
-        new_uri += "//" + loc.host;
-        new_uri += loc.pathname + "ws";
         console.log(new_uri);
 
-        ws = new WebSocket(new_uri);
+        socket = io({transports: ['websocket'], upgrade: false});
+        socket.connect(new_uri);
 
-        ws.onopen = function () {
+        socket.on('connect', function () {
             console.log("Socket has been opened!");
             $rootScope.connection_status = 'Connected';
+            $rootScope.$apply();
+            
+            // request init from server .. do we really need this? we can probably just get it automatically
             Service.command('init', '', '', window.location.origin);
             if(on_open){
                 on_open();
             }
-        };
+        });
 
-        ws.onclose = function(){
+        socket.on('close', function(){
+            console.log("Socket closed");
             $rootScope.connection_status = 'Disconnected, reconnecting...';
             $rootScope.$apply();
-            console.log("Socket closed");
             if(on_close){
                 on_close();
             }
-        };
+        });
 
-        ws.onmessage = function (message) {
-            listener(JSON.parse(message.data));
-        };
-
-        ws.onerror = function(message) {
-            console.log("ws-error: " + message);
-        }
+        socket.on('message', function (message) {
+            console.log(message);
+            listener(message);
+        });
     };
 
     Service.command = function(command, payload) {
-        var d = {
-            command : command,
-            payload : payload
-        };
-        var promise = sendRequest(d);
-        return promise;
+        socket.emit('json', {command: command, payload: payload});
     };
 
     return Service;
@@ -486,7 +458,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
         var leg = bug.leg; // alias for brevity
         // seems to work best with this fixed,
         // gui framerate is a bit hicuppy
-        var TIMECONSTANT = 1.0 / 60.0; // seconds per simulated time step -- neuron time constant is 1/1000, would make sense if they were the same
+        var TIMECONSTANT = 1.0 / 60.0; // seconds per simulated time step -- should match neuron.TimeConstant in neuron.py
         var DT = TIMECONSTANT;
         var PI = Math.PI;
         var TWOPI = 2.0*PI;
@@ -909,30 +881,39 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
     };
 
     var avg = 0.0;
+    var msg_id = 0;
     $rootScope.switchBoard = function(message) {
-        // console.log(message);
+        //console.log(msg_id);
+        msg_id += 1;
 
         switch (message.command) {
             case 'init response':
                 console.log(message);
-                $scope.initialize(message.payload)
+                console.log("init keys: " +  Object.keys(message.payload.nodes).length);
+                $scope.initialize(message.payload);
                 break;
 
             case 'update':
+                // console.log("keys: " +  Object.keys(message.payload).length);
                 var output_count = 0;
                 var value_count = 0;
                 for (var key in message.payload) {
-                    var value = message.payload[key];
-                    if(key.in_list($scope.outputs)) {
-                        $scope.update_output(key, value)
-                        ++output_count;
+                    if(key == 'neurons'){
+                        for(var n in message.payload.neurons) {
+                            var neuron = message.payload.neurons[n];
+                            if(neuron.is_output) {
+                                $scope.update_output(n, neuron.value);
+                                ++output_count;
+                            }
+                        }
                     }else{
-                        $scope[key] = value; // for updating {{ }} variables, but we should do this more intelligently
-                        ++value_count;}
+                        $scope[key] = message.payload[key]; // for updating {{ }} variables, but we should do this more intelligently
+                        ++value_count;
+                    }
                 }
                 var sum = output_count + value_count;
                 avg = 0.95 * avg + 0.05 * sum;
-                if (_DEBUG_)
+                //if (_DEBUG_)
                     console.log('got ' + output_count + ' outs + ' + value_count + ' vals = ' + sum + ' (' + Math.round(avg * 100)/100 + ' avg)');
                 //$scope.bug.angle += 0.1; // demo spin the bug!
                 $scope.calculate_state();

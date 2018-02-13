@@ -7,11 +7,14 @@ import os
 import logging
 import time
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+UPDATE_RATE = 1. / 30  # seconds
+
+logging.basicConfig(format='%(asctime)s %(levelname)s (%(name)s) %(message)s', level=logging.DEBUG)
 _logger = logging.getLogger(__file__)
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8f86c03170811938fd9f798a60ad9ed4d4eed080'
-socketio = SocketIO(app, debug=True)
+socketio = SocketIO(app, debug=False)
 
 app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 static_path = os.path.join(app_path, 'static')
@@ -23,7 +26,11 @@ app.network_state = None
 
 @app.route('/')
 def index():
-    return render_template('hello.html')
+    return render_template('flask_graph.html')
+
+@app.route('/sim')
+def sim_index():
+    return render_template('flask_sim.html')
 
 
 @socketio.on('connect')
@@ -39,10 +46,12 @@ def handle_disconnect():
 
 @socketio.on('json')
 def handle_json(message):
-    _logger.info('json message received: {}'.format(message))
+    #_logger.info('json message received: {}'.format(message))
     if 'command' in message:
         if message['command'] == 'init':
             socketio.emit('message', {'command': 'init response', 'payload': app.network_state.sync_state()})
+        elif message['command'] == 'sensors':
+            app.network_state.update_sensors(message['payload'])
 
 
 class NetworkState(object):
@@ -50,11 +59,12 @@ class NetworkState(object):
     Class to manage module connections and logging
 
     """
-    UPDATE_RATE = 1./30  # seconds
-
     def __init__(self):
         # non-blocking periodic polling in tornado
-        self.update_rate = self.UPDATE_RATE
+        self.update_rate = UPDATE_RATE
+        self.smooth_delta = 0.0
+        self.prev_error = 0.0
+        self.cumulative_error = 0.0
         self.last_frame = time.time()
         self.last_transmitted_state = {}
         self.connected = False
@@ -119,12 +129,13 @@ class NetworkState(object):
 
         # update the network
         self.net.Net.update()
-        payload = {}
+        payload = {'neurons': {}}
         for neuron in self.net.Net.Neurons:
             activity = neuron.get_activity()
             if neuron.Name not in self.last_transmitted_state or self.last_transmitted_state[neuron.Name] != activity:
-                payload[neuron.Name] = activity
-            # payload[neuron.Name] = activity
+                payload['neurons'][neuron.Name] = {"value": activity,
+                                                   "is_output": (len(neuron.Outgoing) == 0 and len(neuron.Incoming) != 0)}
+            # payload['neurons'][neuron.Name] = activity
 
         import random as rnd
         payload['random_value'] = rnd.randint(0, 65535)
@@ -133,13 +144,21 @@ class NetworkState(object):
         delta = (frame - self.last_frame)
         self.last_frame = frame
 
-        payload['time_delta'] = delta
+        self.smooth_delta = 0.99 * self.smooth_delta + 0.01 * delta
+        payload['time_delta'] = self.smooth_delta
 
         # p loop
-        desired_rate = self.UPDATE_RATE
-        kp = 0.003
+        desired_rate = UPDATE_RATE
+        kp = 0.0175
+        ki = 0.00005
+        kd = -0.00001
         error = desired_rate - delta
-        self.update_rate += kp * error
+        error_rate = (error - self.prev_error)
+        self.prev_error = error
+        self.cumulative_error += error
+        rate_change = kp * error + kd * error_rate + ki * self.cumulative_error
+        #_logger.debug('rate:{:7.4f} ({:7.4f}) [p:{:7.4f} i:{:7.4f} d:{:7.4f}]'.format(self.update_rate, rate_change*100.0, error, self.cumulative_error, error_rate))
+        self.update_rate += rate_change
 
         if len(payload) > 2:
             socketio.emit('message', {'command': 'update', 'payload': payload})
@@ -158,6 +177,8 @@ if __name__ == '__main__':
     # foo.start()
 
     socketio.start_background_task(target=app.network_state.device_loop)
+    logging.getLogger('socketio').setLevel(logging.WARN)
+    logging.getLogger('engineio').setLevel(logging.WARN)
 
     socketio.run(app, port=8888)
 

@@ -3,6 +3,8 @@
  */
 
 String.prototype.in_list=function(list){
+   if(list == undefined)
+       return false;
    return ( list.indexOf(this.toString()) != -1)
 };
 
@@ -328,17 +330,24 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             case 'update':
                 // console.log("keys: " +  Object.keys(message.payload).length);
                 for (var key in message.payload) {
-                    var value = message.payload[key];
-                    // if key is a neuron, value is neuron firing frequency
-                    // render firing frequency as % fill
-                    if( key in $scope.all_nodes){
-                        var node = $scope.all_nodes[key].item(0);
-                        var fill = $scope.all_nodes[key].item(1);
-                        fill.set({width: node.getWidth() * value, height: node.getHeight() * value, radius: node.get('radius') * value});
+                    if(key == 'neurons') {
+                        for (var n in message.payload.neurons) {
+                            var neuron = message.payload.neurons[n];
+                            var value = neuron.value;
+                            // if key is a neuron, value is neuron firing frequency
+                            // render firing frequency as % fill
+                            var node = $scope.all_nodes[n].item(0);
+                            var fill = $scope.all_nodes[n].item(1);
+                            fill.set({
+                                width: node.getWidth() * value,
+                                height: node.getHeight() * value,
+                                radius: node.get('radius') * value
+                            });
+                        }
                     }else {
                         // otherwise interpret the value as a scope key
                         // for updating {{ }} variables
-                        $scope[key] = value;
+                        $scope[key] = message.payload[key];
                     }
                 }
                 break;

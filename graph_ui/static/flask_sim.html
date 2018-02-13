@@ -15,7 +15,8 @@
     <!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> -->
     <script src="static/bower_components/angularjs/angular.min.js"></script>
     <script src="static/bower_components/fabric/dist/fabric.js"></script>
-    <script src="static/sim_app.js"></script>
+    <script src="static/bower_components/socket.io-client/dist/socket.io.min.js"></script>
+    <script src="static/flask_sim_app.js"></script>
 </head>
 <style>
         #c {
@@ -37,8 +38,8 @@
       <div class="row"  ng-click="reconnect()">
         <div class="col-md-12">
             <b>Connection status</b>
-            <p ng-if="connection_status=='Connected'">{{connection_status}}, frame rate: {{1.0/time_delta | number}}/s</p>
-            <p ng-if="connection_status!='Connected'">{{connection_status}}</p>
+            <p ng-if="connection_status=='Connected'">[[connection_status]], frame rate: [[1.0/time_delta | number]]/s</p>
+            <p ng-if="connection_status!='Connected'">[[connection_status]]</p>
         </div>
       </div>
 
@@ -47,7 +48,7 @@
             <canvas id="c"></canvas>
          </div>
          <div class="col-md-12">
-             {{current_selection}}
+             [[current_selection]]
          </div>
      </div>
  </div> <!-- /container -->
