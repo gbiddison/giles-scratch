@@ -8,6 +8,7 @@ import logging
 import time
 
 UPDATE_RATE = 1. / 30  # seconds
+MAX_SAFE_PID_DISTANCE = 0.25 # how far off do we really think the loop time is before we just give up? - avoid weird edges and reset
 
 logging.basicConfig(format='%(asctime)s %(levelname)s (%(name)s) %(message)s', level=logging.DEBUG)
 _logger = logging.getLogger(__file__)
@@ -60,11 +61,13 @@ class NetworkState(object):
 
     """
     def __init__(self):
+        def reset_update_rate_pid_params():
+            self.update_rate = UPDATE_RATE
+            self.smooth_delta = 0.0
+            self.prev_error = 0.0
+            self.cumulative_error = 0.0
+        reset_update_rate_pid_params()
         # non-blocking periodic polling in tornado
-        self.update_rate = UPDATE_RATE
-        self.smooth_delta = 0.0
-        self.prev_error = 0.0
-        self.cumulative_error = 0.0
         self.last_frame = time.time()
         self.last_transmitted_state = {}
         self.connected = False
@@ -144,6 +147,7 @@ class NetworkState(object):
         delta = (frame - self.last_frame)
         self.last_frame = frame
 
+		# smooth_delta is a display feature,  no smoothing in actual delta calc currently
         self.smooth_delta = 0.99 * self.smooth_delta + 0.01 * delta
         payload['time_delta'] = self.smooth_delta
 
@@ -157,8 +161,15 @@ class NetworkState(object):
         self.prev_error = error
         self.cumulative_error += error
         rate_change = kp * error + kd * error_rate + ki * self.cumulative_error
-        #_logger.debug('rate:{:7.4f} ({:7.4f}) [p:{:7.4f} i:{:7.4f} d:{:7.4f}]'.format(self.update_rate, rate_change*100.0, error, self.cumulative_error, error_rate))
+        _logger.debug('rate:{:7.4f} ({:7.4f}) [p:{:7.4f} i:{:7.4f} d:{:7.4f}]'.format(self.update_rate, rate_change*100.0, error, self.cumulative_error, error_rate))
         self.update_rate += rate_change
+
+		# don't go crazy ... reset; ie if processor is lagging heavily, ignore the noise
+        distance = abs(desired_rate - self.update_rate);
+        if distance > MAX_SAFE_PID_DISTANCE:
+            # reset
+            _logger.debug("reset rate")
+            self.__init__.reset_update_rate_pid_params()
 
         if len(payload) > 2:
             socketio.emit('message', {'command': 'update', 'payload': payload})
@@ -180,6 +191,6 @@ if __name__ == '__main__':
     logging.getLogger('socketio').setLevel(logging.WARN)
     logging.getLogger('engineio').setLevel(logging.WARN)
 
-    socketio.run(app, port=8888)
+    socketio.run(app, host='0.0.0.0', port=8888)
 
 

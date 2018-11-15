@@ -7,7 +7,8 @@ START_ENERGY = 999.0;
 BITE_ENERGY = 25.0;
 ENERGYPERSECOND = 10.0;
 ENERGY_PER_POOP = START_ENERGY / 10.0;
-POOP_SCALE = 4.0;
+POOP_SCALE = 1.0;
+ODOR_SCALE = 4.0;
 _DEBUG_ = false;
 
 String.prototype.in_list=function(list){
@@ -16,6 +17,9 @@ String.prototype.in_list=function(list){
    return list.indexOf(this.toString()) != -1
 };
 
+// Change the angular double-angle-bracket to double-bracket, avoids an error from angular:
+// Error: [$injector:modulerr] http://errors.angularjs.org/1.4.14/$injector/modulerr?p0=graph_ui_module&p1=%5B
+//
 var app = angular.module( 'graph_ui_module', [] );
 app.config(['$interpolateProvider', function($interpolateProvider){
     $interpolateProvider.startSymbol('[[');
@@ -736,7 +740,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
             var dx = mth_pts[0][0] - food.x;
             var dy = mth_pts[0][1] - food.y;
             var d = dx*dx + dy*dy;
-            var odor = POOP_SCALE * food.size/d
+            var odor = ODOR_SCALE * POOP_SCALE * food.size/d
             if( d != 0.0)
                 bug.mouth_odor += odor;
             // save largest bug.mouth_odor, to pick which food source we actually contact
@@ -766,7 +770,7 @@ app.controller('rootController', ['$scope', '$rootScope', '$timeout', 'WebSocket
                 dy = ant_pts[j][1] - food.y;
                 d = dx*dx + dy*dy;
                 if( d != 0.0) {
-                    bug.antenna_odor[j] += /*0.75*/ 2.0 * POOP_SCALE * food.size / d; // (adjustable!)
+                    bug.antenna_odor[j] += /*0.75*/ 2.0 * odor; // (adjustable!)
                 }
             }
         }
